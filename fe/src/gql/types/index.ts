@@ -91,32 +91,27 @@ export interface VerifyOTPResponse {
   };
 }
 
-// Blockchain Input Types
-export interface AssignBlockchainRoleInput {
+// Blockchain Input Types (matching backend schema)
+export interface AssignRoleInput {
   userAddress: string;
   role: string;
 }
 
-export interface AssignSubjectToTeacherInput {
+export interface SubjectAssignmentInput {
   teacherAddress: string;
   subject: string;
 }
 
-export interface RemoveSubjectFromTeacherInput {
-  teacherAddress: string;
-  subject: string;
-}
-
-export interface RevokeBlockchainCredentialInput {
+export interface RevokeCredentialInput {
   studentAddress: string;
   subject: string;
 }
 
-export interface LinkWalletAddressInput {
+export interface LinkWalletInput {
   walletAddress: string;
 }
 
-export interface RegisterUserDIDInput {
+export interface RegisterDIDInput {
   did: string;
 }
 
@@ -126,7 +121,7 @@ export interface IssueBlockchainCredentialInput {
   credentialData: string;
 }
 
-export interface VerifyBlockchainCredentialInput {
+export interface VerifyCredentialInput {
   studentAddress: string;
   subject: string;
 }

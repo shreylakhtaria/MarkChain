@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 
 // ADMIN OPERATIONS
 export const ASSIGN_BLOCKCHAIN_ROLE = gql`
-  mutation AssignBlockchainRole($input: AssignBlockchainRoleInput!) {
+  mutation AssignBlockchainRole($input: AssignRoleInput!) {
     assignBlockchainRole(input: $input) {
       success
       transactionHash
@@ -13,7 +13,7 @@ export const ASSIGN_BLOCKCHAIN_ROLE = gql`
 `;
 
 export const ASSIGN_SUBJECT_TO_TEACHER = gql`
-  mutation AssignSubjectToTeacher($input: AssignSubjectToTeacherInput!) {
+  mutation AssignSubjectToTeacher($input: SubjectAssignmentInput!) {
     assignSubjectToTeacher(input: $input) {
       success
       transactionHash
@@ -24,7 +24,7 @@ export const ASSIGN_SUBJECT_TO_TEACHER = gql`
 `;
 
 export const REMOVE_SUBJECT_FROM_TEACHER = gql`
-  mutation RemoveSubjectFromTeacher($input: RemoveSubjectFromTeacherInput!) {
+  mutation RemoveSubjectFromTeacher($input: SubjectAssignmentInput!) {
     removeSubjectFromTeacher(input: $input) {
       success
       transactionHash
@@ -35,7 +35,7 @@ export const REMOVE_SUBJECT_FROM_TEACHER = gql`
 `;
 
 export const REVOKE_BLOCKCHAIN_CREDENTIAL = gql`
-  mutation RevokeBlockchainCredential($input: RevokeBlockchainCredentialInput!) {
+  mutation RevokeBlockchainCredential($input: RevokeCredentialInput!) {
     revokeBlockchainCredential(input: $input) {
       success
       transactionHash
@@ -47,7 +47,7 @@ export const REVOKE_BLOCKCHAIN_CREDENTIAL = gql`
 
 // USER OPERATIONS
 export const LINK_WALLET_ADDRESS = gql`
-  mutation LinkWalletAddress($input: LinkWalletAddressInput!) {
+  mutation LinkWalletAddress($input: LinkWalletInput!) {
     linkWalletAddress(input: $input) {
       success
       transactionHash
@@ -58,7 +58,7 @@ export const LINK_WALLET_ADDRESS = gql`
 `;
 
 export const REGISTER_USER_DID = gql`
-  mutation RegisterUserDID($input: RegisterUserDIDInput!) {
+  mutation RegisterUserDID($input: RegisterDIDInput!) {
     registerUserDID(input: $input) {
       success
       transactionHash

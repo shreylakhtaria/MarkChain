@@ -52,7 +52,7 @@ export const GET_MY_BLOCKCHAIN_CREDENTIALS = gql`
 
 // PUBLIC QUERIES
 export const VERIFY_BLOCKCHAIN_CREDENTIAL = gql`
-  query VerifyBlockchainCredential($input: VerifyBlockchainCredentialInput!) {
+  query VerifyBlockchainCredential($input: VerifyCredentialInput!) {
     verifyBlockchainCredential(input: $input) {
       ipfsHash
       issuer

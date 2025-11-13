@@ -17,14 +17,13 @@ import {
   GET_BLOCKCHAIN_NETWORK_INFO,
   TEST_IPFS_CONNECTION,
   // Types
-  AssignBlockchainRoleInput,
-  AssignSubjectToTeacherInput,
-  RemoveSubjectFromTeacherInput,
-  RevokeBlockchainCredentialInput,
-  LinkWalletAddressInput,
-  RegisterUserDIDInput,
+  AssignRoleInput,
+  SubjectAssignmentInput,
+  RevokeCredentialInput,
+  LinkWalletInput,
+  RegisterDIDInput,
   IssueBlockchainCredentialInput,
-  VerifyBlockchainCredentialInput,
+  VerifyCredentialInput,
   AssignBlockchainRoleResponse,
   AssignSubjectToTeacherResponse,
   RemoveSubjectFromTeacherResponse,
@@ -47,38 +46,38 @@ import {
 
 // Admin Operations
 export const useAssignBlockchainRole = () => {
-  return useMutation<AssignBlockchainRoleResponse, { input: AssignBlockchainRoleInput }>(
+  return useMutation<AssignBlockchainRoleResponse, { input: AssignRoleInput }>(
     ASSIGN_BLOCKCHAIN_ROLE
   );
 };
 
 export const useAssignSubjectToTeacher = () => {
-  return useMutation<AssignSubjectToTeacherResponse, { input: AssignSubjectToTeacherInput }>(
+  return useMutation<AssignSubjectToTeacherResponse, { input: SubjectAssignmentInput }>(
     ASSIGN_SUBJECT_TO_TEACHER
   );
 };
 
 export const useRemoveSubjectFromTeacher = () => {
-  return useMutation<RemoveSubjectFromTeacherResponse, { input: RemoveSubjectFromTeacherInput }>(
+  return useMutation<RemoveSubjectFromTeacherResponse, { input: SubjectAssignmentInput }>(
     REMOVE_SUBJECT_FROM_TEACHER
   );
 };
 
 export const useRevokeBlockchainCredential = () => {
-  return useMutation<RevokeBlockchainCredentialResponse, { input: RevokeBlockchainCredentialInput }>(
+  return useMutation<RevokeBlockchainCredentialResponse, { input: RevokeCredentialInput }>(
     REVOKE_BLOCKCHAIN_CREDENTIAL
   );
 };
 
 // User Operations
 export const useLinkWalletAddress = () => {
-  return useMutation<LinkWalletAddressResponse, { input: LinkWalletAddressInput }>(
+  return useMutation<LinkWalletAddressResponse, { input: LinkWalletInput }>(
     LINK_WALLET_ADDRESS
   );
 };
 
 export const useRegisterUserDID = () => {
-  return useMutation<RegisterUserDIDResponse, { input: RegisterUserDIDInput }>(
+  return useMutation<RegisterUserDIDResponse, { input: RegisterDIDInput }>(
     REGISTER_USER_DID
   );
 };
@@ -117,10 +116,10 @@ export const useGetMyBlockchainCredentials = () => {
 
 // Public Queries
 export const useVerifyBlockchainCredential = (
-  input: VerifyBlockchainCredentialInput,
+  input: VerifyCredentialInput,
   options?: { skip?: boolean }
 ) => {
-  return useQuery<VerifyBlockchainCredentialResponse, { input: VerifyBlockchainCredentialInput }>(
+  return useQuery<VerifyBlockchainCredentialResponse, { input: VerifyCredentialInput }>(
     VERIFY_BLOCKCHAIN_CREDENTIAL,
     {
       variables: { input },
