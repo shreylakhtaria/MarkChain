@@ -96,6 +96,40 @@ type ValidateDIDResponse {
   network: String
 }
 
+type BlockchainCredential {
+  ipfsHash: String!
+  issuer: String!
+  updatedAt: String!
+  studentName: String
+  subject: String
+  grade: String
+  blockchainTxHash: String
+}
+
+type BlockchainUserStatus {
+  walletAddress: String
+  didHash: String
+  blockchainRole: String
+  didRegistered: Boolean!
+  hasBlockchainRole: Boolean!
+  assignedSubjects: [String!]!
+}
+
+type NetworkInfo {
+  contractAddress: String!
+  walletAddress: String!
+  network: String!
+  chainId: String!
+  isConnected: Boolean!
+}
+
+type TransactionResponse {
+  success: Boolean!
+  transactionHash: String
+  message: String
+  error: String
+}
+
 type Query {
   me: String!
   getUsersByRole(role: UserRole!): [UserDto!]!
@@ -106,10 +140,22 @@ type Query {
   validateDID(validateDIDDto: ValidateDIDDto!): ValidateDIDResponse!
   generateNonce: String!
   validateTimestamp(timestamp: Float!, maxAgeMs: Float! = 300000): Boolean!
+  getMyBlockchainStatus: BlockchainUserStatus!
+  getMyAssignedSubjects: [String!]!
+  getMySubjectCredential(subject: String!): BlockchainCredential
+  getMyBlockchainCredentials: [BlockchainCredential!]!
+  verifyBlockchainCredential(input: VerifyCredentialInput!): BlockchainCredential
+  getBlockchainNetworkInfo: NetworkInfo!
+  testIPFSConnection: Boolean!
 }
 
 input ValidateDIDDto {
   did: String!
+}
+
+input VerifyCredentialInput {
+  studentAddress: String!
+  subject: String!
 }
 
 type Mutation {
@@ -120,6 +166,13 @@ type Mutation {
   verifyOTPAndUpdateProfile(input: VerifyOTPDto!): VerifyOTPResponseDto!
   hashData(hashDataDto: HashDataDto!): HashResponse!
   sanitizeString(input: String!): String!
+  assignBlockchainRole(input: AssignRoleInput!): TransactionResponse!
+  assignSubjectToTeacher(input: SubjectAssignmentInput!): TransactionResponse!
+  removeSubjectFromTeacher(input: SubjectAssignmentInput!): TransactionResponse!
+  revokeBlockchainCredential(input: RevokeCredentialInput!): TransactionResponse!
+  linkWalletAddress(input: LinkWalletInput!): TransactionResponse!
+  registerUserDID(input: RegisterDIDInput!): TransactionResponse!
+  issueBlockchainCredential(input: IssueBlockchainCredentialInput!): TransactionResponse!
 }
 
 input VerifySignatureInput {
@@ -146,4 +199,33 @@ input VerifyOTPDto {
 input HashDataDto {
   data: String!
   algorithm: String! = "sha256"
+}
+
+input AssignRoleInput {
+  userAddress: String!
+  role: String!
+}
+
+input SubjectAssignmentInput {
+  teacherAddress: String!
+  subject: String!
+}
+
+input RevokeCredentialInput {
+  studentAddress: String!
+  subject: String!
+}
+
+input LinkWalletInput {
+  walletAddress: String!
+}
+
+input RegisterDIDInput {
+  did: String!
+}
+
+input IssueBlockchainCredentialInput {
+  studentAddress: String!
+  subject: String!
+  credentialData: String!
 }

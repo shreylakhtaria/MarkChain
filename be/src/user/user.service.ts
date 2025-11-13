@@ -248,6 +248,9 @@ export class UserService {
       .select('-nonce')
       .exec();
 
+      // Note: Blockchain role assignment should be done separately via the blockchain resolver
+      // This keeps the user service focused on user management only
+
       return {
         success: true,
         message: 'Profile updated successfully',
@@ -267,5 +270,114 @@ export class UserService {
       .find({ isActive: true })
       .select('-nonce')
       .exec();
+  }
+
+  // Blockchain integration methods
+  async linkWallet(userId: string, walletAddress: string): Promise<any> {
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { 
+        $set: { 
+          walletAddress: walletAddress.toLowerCase() 
+        } 
+      },
+      { new: true }
+    ).select('-nonce').exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return user;
+  }
+
+  async updateBlockchainRole(walletAddress: string, role: string): Promise<any> {
+    const user = await this.userModel.findOneAndUpdate(
+      { walletAddress: walletAddress.toLowerCase() },
+      { 
+        $set: { 
+          blockchainRole: role 
+        } 
+      },
+      { new: true }
+    ).select('-nonce').exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with wallet address ${walletAddress} not found`);
+    }
+
+    return user;
+  }
+
+  async updateDIDStatus(userId: string, didHash: string, didRegistered: boolean): Promise<any> {
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { 
+        $set: { 
+          didHash: didHash,
+          didRegistered: didRegistered 
+        } 
+      },
+      { new: true }
+    ).select('-nonce').exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return user;
+  }
+
+  async addSubjectToTeacher(teacherAddress: string, subject: string): Promise<any> {
+    const user = await this.userModel.findOneAndUpdate(
+      { 
+        walletAddress: teacherAddress.toLowerCase(),
+        role: UserRole.TEACHER 
+      },
+      { 
+        $addToSet: { 
+          assignedSubjects: subject 
+        } 
+      },
+      { new: true }
+    ).select('-nonce').exec();
+
+    if (!user) {
+      throw new NotFoundException(`Teacher with wallet address ${teacherAddress} not found`);
+    }
+
+    return user;
+  }
+
+  async removeSubjectFromTeacher(teacherAddress: string, subject: string): Promise<any> {
+    const user = await this.userModel.findOneAndUpdate(
+      { 
+        walletAddress: teacherAddress.toLowerCase(),
+        role: UserRole.TEACHER 
+      },
+      { 
+        $pull: { 
+          assignedSubjects: subject 
+        } 
+      },
+      { new: true }
+    ).select('-nonce').exec();
+
+    if (!user) {
+      throw new NotFoundException(`Teacher with wallet address ${teacherAddress} not found`);
+    }
+
+    return user;
+  }
+
+  async getUserByWalletAddress(walletAddress: string): Promise<any> {
+    const user = await this.userModel.findOne({
+      walletAddress: walletAddress.toLowerCase(),
+      isActive: true,
+    })
+    .select('-nonce')
+    .exec();
+
+    return user;
   }
 }
