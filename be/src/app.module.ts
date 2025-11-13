@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { UtilityModule } from './utility/utility.module';
 import { EmailModule } from './email/email.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
 import { getDatabaseConfig } from './config/database.config';
 
 @Module({
@@ -48,6 +49,7 @@ import { getDatabaseConfig } from './config/database.config';
     UserModule,
     UtilityModule,
     EmailModule,
+    BlockchainModule,
   ],
   controllers: [],
   providers: [AppService],
