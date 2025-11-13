@@ -196,7 +196,15 @@ export class BlockchainResolver {
     @Context() context,
   ): Promise<TransactionResponse> {
     try {
-      const userId = context.req.user.id;
+      // Debug logging
+      console.log('Context.req exists:', !!context.req);
+      console.log('Context.req.user exists:', !!context.req.user);
+      console.log('Context.req.user:', context.req.user);
+      console.log('Input:', input);
+      
+      const userId = context.req.user.userId;
+      console.log('Extracted userId:', userId);
+      
       await this.userService.linkWallet(userId, input.walletAddress);
 
       return {
@@ -221,7 +229,7 @@ export class BlockchainResolver {
       const txHash = await this.blockchainService.registerDID(input.did);
       
       // Update user record
-      const userId = context.req.user.id;
+      const userId = context.req.user.userId;
       await this.userService.updateDIDStatus(userId, input.did, true);
 
       return {
