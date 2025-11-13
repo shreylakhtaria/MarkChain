@@ -90,3 +90,136 @@ export interface VerifyOTPResponse {
     };
   };
 }
+
+// Blockchain Input Types
+export interface AssignBlockchainRoleInput {
+  userAddress: string;
+  role: string;
+}
+
+export interface AssignSubjectToTeacherInput {
+  teacherAddress: string;
+  subject: string;
+}
+
+export interface RemoveSubjectFromTeacherInput {
+  teacherAddress: string;
+  subject: string;
+}
+
+export interface RevokeBlockchainCredentialInput {
+  studentAddress: string;
+  subject: string;
+}
+
+export interface LinkWalletAddressInput {
+  walletAddress: string;
+}
+
+export interface RegisterUserDIDInput {
+  did: string;
+}
+
+export interface IssueBlockchainCredentialInput {
+  studentAddress: string;
+  subject: string;
+  credentialData: string;
+}
+
+export interface VerifyBlockchainCredentialInput {
+  studentAddress: string;
+  subject: string;
+}
+
+// Blockchain Response Types
+export interface BlockchainOperationResponse {
+  success: boolean;
+  transactionHash?: string;
+  message?: string;
+  error?: string;
+}
+
+export interface BlockchainStatus {
+  walletAddress?: string;
+  didHash?: string;
+  blockchainRole?: string;
+  didRegistered: boolean;
+  hasBlockchainRole: boolean;
+  assignedSubjects: string[];
+}
+
+export interface BlockchainCredential {
+  ipfsHash: string;
+  issuer: string;
+  updatedAt: string;
+  subject: string;
+  studentName: string;
+  grade: string;
+  blockchainTxHash: string;
+}
+
+export interface BlockchainNetworkInfo {
+  contractAddress: string;
+  walletAddress: string;
+  network: string;
+  chainId: number;
+  isConnected: boolean;
+}
+
+// Blockchain Query Response Types
+export interface GetMyBlockchainStatusResponse {
+  getMyBlockchainStatus: BlockchainStatus;
+}
+
+export interface GetMyAssignedSubjectsResponse {
+  getMyAssignedSubjects: string[];
+}
+
+export interface GetMySubjectCredentialResponse {
+  getMySubjectCredential: BlockchainCredential;
+}
+
+export interface GetMyBlockchainCredentialsResponse {
+  getMyBlockchainCredentials: BlockchainCredential[];
+}
+
+export interface VerifyBlockchainCredentialResponse {
+  verifyBlockchainCredential: BlockchainCredential;
+}
+
+export interface GetBlockchainNetworkInfoResponse {
+  getBlockchainNetworkInfo: BlockchainNetworkInfo;
+}
+
+export interface TestIPFSConnectionResponse {
+  testIPFSConnection: boolean;
+}
+
+// Blockchain Mutation Response Types
+export interface AssignBlockchainRoleResponse {
+  assignBlockchainRole: BlockchainOperationResponse;
+}
+
+export interface AssignSubjectToTeacherResponse {
+  assignSubjectToTeacher: BlockchainOperationResponse;
+}
+
+export interface RemoveSubjectFromTeacherResponse {
+  removeSubjectFromTeacher: BlockchainOperationResponse;
+}
+
+export interface RevokeBlockchainCredentialResponse {
+  revokeBlockchainCredential: BlockchainOperationResponse;
+}
+
+export interface LinkWalletAddressResponse {
+  linkWalletAddress: BlockchainOperationResponse;
+}
+
+export interface RegisterUserDIDResponse {
+  registerUserDID: BlockchainOperationResponse;
+}
+
+export interface IssueBlockchainCredentialResponse {
+  issueBlockchainCredential: BlockchainOperationResponse;
+}

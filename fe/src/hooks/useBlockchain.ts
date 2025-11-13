@@ -1,0 +1,188 @@
+import { useMutation, useQuery } from '@apollo/client';
+import {
+  // Blockchain Mutations
+  ASSIGN_BLOCKCHAIN_ROLE,
+  ASSIGN_SUBJECT_TO_TEACHER,
+  REMOVE_SUBJECT_FROM_TEACHER,
+  REVOKE_BLOCKCHAIN_CREDENTIAL,
+  LINK_WALLET_ADDRESS,
+  REGISTER_USER_DID,
+  ISSUE_BLOCKCHAIN_CREDENTIAL,
+  // Blockchain Queries
+  GET_MY_BLOCKCHAIN_STATUS,
+  GET_MY_ASSIGNED_SUBJECTS,
+  GET_MY_SUBJECT_CREDENTIAL,
+  GET_MY_BLOCKCHAIN_CREDENTIALS,
+  VERIFY_BLOCKCHAIN_CREDENTIAL,
+  GET_BLOCKCHAIN_NETWORK_INFO,
+  TEST_IPFS_CONNECTION,
+  // Types
+  AssignBlockchainRoleInput,
+  AssignSubjectToTeacherInput,
+  RemoveSubjectFromTeacherInput,
+  RevokeBlockchainCredentialInput,
+  LinkWalletAddressInput,
+  RegisterUserDIDInput,
+  IssueBlockchainCredentialInput,
+  VerifyBlockchainCredentialInput,
+  AssignBlockchainRoleResponse,
+  AssignSubjectToTeacherResponse,
+  RemoveSubjectFromTeacherResponse,
+  RevokeBlockchainCredentialResponse,
+  LinkWalletAddressResponse,
+  RegisterUserDIDResponse,
+  IssueBlockchainCredentialResponse,
+  GetMyBlockchainStatusResponse,
+  GetMyAssignedSubjectsResponse,
+  GetMySubjectCredentialResponse,
+  GetMyBlockchainCredentialsResponse,
+  VerifyBlockchainCredentialResponse,
+  GetBlockchainNetworkInfoResponse,
+  TestIPFSConnectionResponse
+} from '../gql';
+
+/**
+ * Custom hooks for blockchain operations
+ */
+
+// Admin Operations
+export const useAssignBlockchainRole = () => {
+  return useMutation<AssignBlockchainRoleResponse, { input: AssignBlockchainRoleInput }>(
+    ASSIGN_BLOCKCHAIN_ROLE
+  );
+};
+
+export const useAssignSubjectToTeacher = () => {
+  return useMutation<AssignSubjectToTeacherResponse, { input: AssignSubjectToTeacherInput }>(
+    ASSIGN_SUBJECT_TO_TEACHER
+  );
+};
+
+export const useRemoveSubjectFromTeacher = () => {
+  return useMutation<RemoveSubjectFromTeacherResponse, { input: RemoveSubjectFromTeacherInput }>(
+    REMOVE_SUBJECT_FROM_TEACHER
+  );
+};
+
+export const useRevokeBlockchainCredential = () => {
+  return useMutation<RevokeBlockchainCredentialResponse, { input: RevokeBlockchainCredentialInput }>(
+    REVOKE_BLOCKCHAIN_CREDENTIAL
+  );
+};
+
+// User Operations
+export const useLinkWalletAddress = () => {
+  return useMutation<LinkWalletAddressResponse, { input: LinkWalletAddressInput }>(
+    LINK_WALLET_ADDRESS
+  );
+};
+
+export const useRegisterUserDID = () => {
+  return useMutation<RegisterUserDIDResponse, { input: RegisterUserDIDInput }>(
+    REGISTER_USER_DID
+  );
+};
+
+// Teacher Operations
+export const useIssueBlockchainCredential = () => {
+  return useMutation<IssueBlockchainCredentialResponse, { input: IssueBlockchainCredentialInput }>(
+    ISSUE_BLOCKCHAIN_CREDENTIAL
+  );
+};
+
+// User Queries
+export const useGetMyBlockchainStatus = () => {
+  return useQuery<GetMyBlockchainStatusResponse>(GET_MY_BLOCKCHAIN_STATUS);
+};
+
+// Teacher Queries
+export const useGetMyAssignedSubjects = () => {
+  return useQuery<GetMyAssignedSubjectsResponse>(GET_MY_ASSIGNED_SUBJECTS);
+};
+
+// Student Queries
+export const useGetMySubjectCredential = (subject: string, options?: { skip?: boolean }) => {
+  return useQuery<GetMySubjectCredentialResponse, { subject: string }>(
+    GET_MY_SUBJECT_CREDENTIAL,
+    {
+      variables: { subject },
+      skip: !subject || options?.skip
+    }
+  );
+};
+
+export const useGetMyBlockchainCredentials = () => {
+  return useQuery<GetMyBlockchainCredentialsResponse>(GET_MY_BLOCKCHAIN_CREDENTIALS);
+};
+
+// Public Queries
+export const useVerifyBlockchainCredential = (
+  input: VerifyBlockchainCredentialInput,
+  options?: { skip?: boolean }
+) => {
+  return useQuery<VerifyBlockchainCredentialResponse, { input: VerifyBlockchainCredentialInput }>(
+    VERIFY_BLOCKCHAIN_CREDENTIAL,
+    {
+      variables: { input },
+      skip: !input.studentAddress || !input.subject || options?.skip
+    }
+  );
+};
+
+// Utility Queries
+export const useGetBlockchainNetworkInfo = () => {
+  return useQuery<GetBlockchainNetworkInfoResponse>(GET_BLOCKCHAIN_NETWORK_INFO);
+};
+
+export const useTestIPFSConnection = () => {
+  return useQuery<TestIPFSConnectionResponse>(TEST_IPFS_CONNECTION);
+};
+
+/**
+ * Higher-level composite hooks for common blockchain operations
+ */
+
+// Hook to check if user has blockchain setup completed
+export const useBlockchainSetupStatus = () => {
+  const { data, loading, error, refetch } = useGetMyBlockchainStatus();
+  
+  const isSetupComplete = data?.getMyBlockchainStatus ? 
+    data.getMyBlockchainStatus.didRegistered && 
+    data.getMyBlockchainStatus.hasBlockchainRole : false;
+  
+  return {
+    status: data?.getMyBlockchainStatus,
+    isSetupComplete,
+    loading,
+    error,
+    refetch
+  };
+};
+
+// Hook for teacher subject management
+export const useTeacherSubjectManagement = () => {
+  const { data: subjects, loading, error, refetch } = useGetMyAssignedSubjects();
+  const [assignSubject] = useAssignSubjectToTeacher();
+  const [removeSubject] = useRemoveSubjectFromTeacher();
+  
+  return {
+    subjects: subjects?.getMyAssignedSubjects || [],
+    loading,
+    error,
+    refetch,
+    assignSubject,
+    removeSubject
+  };
+};
+
+// Hook for student credentials management
+export const useStudentCredentials = () => {
+  const { data, loading, error, refetch } = useGetMyBlockchainCredentials();
+  
+  return {
+    credentials: data?.getMyBlockchainCredentials || [],
+    loading,
+    error,
+    refetch
+  };
+};
