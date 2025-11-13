@@ -16,6 +16,7 @@ export default function DynamicNavbar() {
   const adminNavItems = [
     { label: "Dashboard", href: "/admin" },
     { label: "Students", href: "/admin/students" },
+    { label: "Schedule", href: "/admin/schedule" },
     { label: "Profile", href: "/profile" },
   ];
 
