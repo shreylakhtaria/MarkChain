@@ -34,17 +34,6 @@ export const REMOVE_SUBJECT_FROM_TEACHER = gql`
   }
 `;
 
-export const REVOKE_BLOCKCHAIN_CREDENTIAL = gql`
-  mutation RevokeBlockchainCredential($input: RevokeCredentialInput!) {
-    revokeBlockchainCredential(input: $input) {
-      success
-      transactionHash
-      message
-      error
-    }
-  }
-`;
-
 // USER OPERATIONS
 export const LINK_WALLET_ADDRESS = gql`
   mutation LinkWalletAddress($input: LinkWalletInput!) {
@@ -72,6 +61,19 @@ export const REGISTER_USER_DID = gql`
 export const ISSUE_BLOCKCHAIN_CREDENTIAL = gql`
   mutation IssueBlockchainCredential($input: IssueBlockchainCredentialInput!) {
     issueBlockchainCredential(input: $input) {
+      success
+      transactionHash
+      message
+      error
+    }
+  }
+`;
+
+
+
+export const REVOKE_BLOCKCHAIN_CREDENTIAL = gql`
+  mutation RevokeBlockchainCredential($input: RevokeCredentialInput!) {
+    revokeBlockchainCredential(input: $input) {
       success
       transactionHash
       message

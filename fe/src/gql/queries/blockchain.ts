@@ -21,6 +21,8 @@ export const GET_MY_ASSIGNED_SUBJECTS = gql`
   }
 `;
 
+
+
 // STUDENT QUERIES
 export const GET_MY_SUBJECT_CREDENTIAL = gql`
   query GetMySubjectCredential($subject: String!) {
@@ -31,7 +33,6 @@ export const GET_MY_SUBJECT_CREDENTIAL = gql`
       subject
       studentName
       grade
-      blockchainTxHash
     }
   }
 `;
@@ -45,7 +46,6 @@ export const GET_MY_BLOCKCHAIN_CREDENTIALS = gql`
       subject
       studentName
       grade
-      blockchainTxHash
     }
   }
 `;
@@ -60,7 +60,6 @@ export const VERIFY_BLOCKCHAIN_CREDENTIAL = gql`
       subject
       studentName
       grade
-      blockchainTxHash
     }
   }
 `;
