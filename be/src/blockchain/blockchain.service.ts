@@ -133,6 +133,33 @@ export class BlockchainService {
     }
   }
 
+  // Alias method for issueOrUpdateCredential with DID-based parameters
+  async issueCredential(
+    studentDID: string,
+    vcHash: string,
+    ipfsHash: string
+  ): Promise<string> {
+    try {
+      // Extract address from DID if needed, or use as is
+      // DID format: did:ethr:0xAddress
+      const addressMatch = studentDID.match(/0x[a-fA-F0-9]{40}/);
+      const studentAddress = addressMatch ? addressMatch[0] : studentDID;
+
+      // Use a generic subject identifier or hash for this type of credential
+      const tx = await this.contract.issueOrUpdateCredential(
+        studentAddress,
+        vcHash.substring(0, 32), // Use first 32 chars of hash as subject identifier
+        ipfsHash
+      );
+      await tx.wait();
+      this.logger.log(`Credential issued for ${studentDID} with hash ${vcHash}`);
+      return tx.hash;
+    } catch (error) {
+      this.logger.error(`Failed to issue credential: ${error.message}`);
+      throw error;
+    }
+  }
+
   async revokeCredential(studentAddress: string, subject: string): Promise<string> {
     try {
       const tx = await this.contract.revokeCredential(studentAddress, subject);

@@ -29,6 +29,9 @@ export class User {
   @Prop({ unique: true, sparse: true })
   studentId?: string;
 
+  @Prop()
+  batch?: string;
+
   @Prop({ default: true })
   isActive: boolean;
 

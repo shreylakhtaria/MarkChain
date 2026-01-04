@@ -10,6 +10,9 @@ import { UserModule } from './user/user.module';
 import { UtilityModule } from './utility/utility.module';
 import { EmailModule } from './email/email.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
+import { AdminModule } from './admin/admin.module';
+import { TeacherModule } from './teacher/teacher.module';
+import { NotificationModule } from './notification/notification.module';
 import { getDatabaseConfig } from './config/database.config';
 
 @Module({
@@ -50,6 +53,9 @@ import { getDatabaseConfig } from './config/database.config';
     UtilityModule,
     EmailModule,
     BlockchainModule,
+    AdminModule,
+    TeacherModule,
+    NotificationModule,
   ],
   controllers: [],
   providers: [AppService],

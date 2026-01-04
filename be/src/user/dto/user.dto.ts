@@ -100,3 +100,49 @@ export class VerifyOTPResponseDto {
   @Field(() => UserDto, { nullable: true })
   user?: UserDto;
 }
+
+// Teacher and Admin Profile Update with Email OTP
+@InputType()
+export class SendEmailOTPDto {
+  @Field()
+  email: string;
+
+  @Field({ nullable: true })
+  name?: string;
+}
+
+@InputType()
+export class VerifyEmailOTPDto {
+  @Field()
+  email: string;
+
+  @Field()
+  otp: string;
+
+  @Field({ nullable: true })
+  name?: string;
+}
+
+@ObjectType()
+export class EmailOTPResponseDto {
+  @Field()
+  success: boolean;
+
+  @Field()
+  message: string;
+
+  @Field({ nullable: true })
+  email?: string;
+}
+
+@ObjectType()
+export class VerifyEmailOTPResponseDto {
+  @Field()
+  success: boolean;
+
+  @Field()
+  message: string;
+
+  @Field(() => UserDto, { nullable: true })
+  user?: UserDto;
+}

@@ -83,6 +83,56 @@ export class IPFSService {
   }
 
   /**
+   * Upload any JSON data to IPFS via Pinata
+   */
+  async uploadJSON(jsonData: any): Promise<string> {
+    try {
+      const apiKey = this.configService.get<string>('PINATA_API_KEY');
+      const secretKey = this.configService.get<string>('PINATA_SECRET_KEY');
+
+      if (!apiKey || !secretKey) {
+        throw new Error('Pinata API credentials not configured');
+      }
+
+      const metadata = {
+        name: `VC_${Date.now()}`,
+        keyvalues: {
+          type: 'VerifiableCredential',
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      const data = {
+        pinataContent: jsonData,
+        pinataMetadata: metadata,
+        pinataOptions: {
+          cidVersion: 1
+        }
+      };
+
+      const response = await axios.post(
+        `${this.pinataApiUrl}/pinning/pinJSONToIPFS`,
+        data,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'pinata_api_key': apiKey,
+            'pinata_secret_api_key': secretKey,
+          },
+        }
+      );
+
+      const ipfsHash = response.data.IpfsHash;
+      this.logger.log(`JSON data uploaded to IPFS: ${ipfsHash}`);
+      
+      return ipfsHash;
+    } catch (error) {
+      this.logger.error(`Failed to upload JSON to IPFS: ${error.message}`);
+      throw new Error(`IPFS upload failed: ${error.message}`);
+    }
+  }
+
+  /**
    * Retrieve credential data from IPFS
    */
   async getCredential(ipfsHash: string): Promise<CredentialData | null> {

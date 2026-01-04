@@ -60,6 +60,18 @@ type VerifyOTPResponseDto {
   user: UserDto
 }
 
+type EmailOTPResponseDto {
+  success: Boolean!
+  message: String!
+  email: String
+}
+
+type VerifyEmailOTPResponseDto {
+  success: Boolean!
+  message: String!
+  user: UserDto
+}
+
 type HealthCheckResponse {
   status: String!
   timestamp: String!
@@ -130,6 +142,141 @@ type TransactionResponse {
   error: String
 }
 
+type AssignBlockchainRoleResponse {
+  success: Boolean!
+  message: String!
+  txHash: String
+}
+
+type TeacherSubjectDto {
+  _id: String!
+  teacherDID: String!
+  teacherWalletAddress: String!
+  teacherName: String!
+  subjectCode: String!
+  subjectName: String!
+  academicYear: String!
+  semester: String!
+  batches: [String!]!
+  department: String
+  isActive: Boolean!
+  assignedBy: String
+  assignedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type AdminRevokeCredentialResponse {
+  success: Boolean!
+  message: String!
+  credentialId: String
+}
+
+type ExamScheduleDto {
+  _id: String!
+  subject: String!
+  examName: String!
+  examType: String!
+  examDate: DateTime!
+  duration: Float!
+  totalMarks: Float!
+  passingMarks: Float!
+  venue: String!
+  teacherDID: String!
+  academicYear: String!
+  semester: String!
+  batch: String!
+  status: String!
+  description: String
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type StudentByBatchDto {
+  _id: String!
+  walletAddress: String!
+  did: String!
+  name: String!
+  studentId: String!
+  email: String
+  isActive: Boolean!
+  batch: String
+}
+
+type NotificationDto {
+  _id: String!
+  recipientDID: String!
+  recipientWalletAddress: String!
+  type: String!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  readAt: DateTime
+  senderDID: String
+  senderWalletAddress: String
+  relatedEntityId: String
+  relatedEntityType: String
+  createdAt: DateTime!
+}
+
+type MarkNotificationReadResponse {
+  success: Boolean!
+  message: String!
+}
+
+type CourseSetupDto {
+  totalSubjects: Float!
+  totalBatches: Float!
+  totalStudents: Float!
+  subjects: [SubjectInfoDto!]!
+}
+
+type SubjectInfoDto {
+  _id: String!
+  subjectCode: String!
+  subjectName: String!
+  academicYear: String!
+  semester: String!
+  batches: [String!]!
+  department: String
+}
+
+type UploadMarksResponse {
+  success: Boolean!
+  message: String!
+  credentialId: String
+  vcHash: String
+}
+
+type TeacherStudentDto {
+  _id: String!
+  walletAddress: String!
+  did: String!
+  name: String!
+  studentId: String!
+  email: String
+  batch: String
+  isActive: Boolean!
+}
+
+type TeacherCredentialDto {
+  _id: String!
+  studentDID: String!
+  studentName: String!
+  subject: String!
+  marks: Float!
+  grade: String
+  examType: String!
+  academicYear: String!
+  semester: String!
+  isRevoked: Boolean!
+  blockchainTxHash: String
+  ipfsHash: String
+  createdAt: DateTime!
+}
+
 type Query {
   me: String!
   getUsersByRole(role: UserRole!): [UserDto!]!
@@ -147,6 +294,16 @@ type Query {
   verifyBlockchainCredential(input: VerifyCredentialInput!): BlockchainCredential
   getBlockchainNetworkInfo: NetworkInfo!
   testIPFSConnection: Boolean!
+  getAllTeacherSubjects: [TeacherSubjectDto!]!
+  getTeacherSubjectsByTeacher(teacherWalletAddress: String!): [TeacherSubjectDto!]!
+  getAllExamSchedules: [ExamScheduleDto!]!
+  getExamScheduleById(examId: String!): ExamScheduleDto!
+  getStudentsByBatch(batch: String!): [StudentByBatchDto!]!
+  getMyNotifications(limit: Int): [NotificationDto!]!
+  getUnreadNotificationsCount: Int!
+  getTeacherCourseSetup: CourseSetupDto!
+  getTeacherStudents(batch: String): [TeacherStudentDto!]!
+  getTeacherCredentials(subject: String): [TeacherCredentialDto!]!
 }
 
 input ValidateDIDDto {
@@ -164,15 +321,28 @@ type Mutation {
   updateUserProfile(input: UpdateUserProfileDto!): UserDto!
   sendOTPForVerification(input: SendOTPDto!): OTPResponseDto!
   verifyOTPAndUpdateProfile(input: VerifyOTPDto!): VerifyOTPResponseDto!
+  sendEmailOTPForProfile(input: SendEmailOTPDto!): EmailOTPResponseDto!
+  verifyEmailOTPAndUpdateProfile(input: VerifyEmailOTPDto!): VerifyEmailOTPResponseDto!
   hashData(hashDataDto: HashDataDto!): HashResponse!
   sanitizeString(input: String!): String!
-  assignBlockchainRole(input: AssignRoleInput!): TransactionResponse!
+  assignBlockchainRole(input: AssignBlockchainRoleInput!): AssignBlockchainRoleResponse!
   assignSubjectToTeacher(input: SubjectAssignmentInput!): TransactionResponse!
   removeSubjectFromTeacher(input: SubjectAssignmentInput!): TransactionResponse!
   revokeBlockchainCredential(input: RevokeCredentialInput!): TransactionResponse!
   linkWalletAddress(input: LinkWalletInput!): TransactionResponse!
   registerUserDID(input: RegisterDIDInput!): TransactionResponse!
   issueBlockchainCredential(input: IssueBlockchainCredentialInput!): TransactionResponse!
+  createTeacherSubject(input: CreateTeacherSubjectInput!): TeacherSubjectDto!
+  updateTeacherSubject(input: UpdateTeacherSubjectInput!): TeacherSubjectDto!
+  deleteTeacherSubject(subjectId: String!): AssignBlockchainRoleResponse!
+  revokeCredential(input: AdminRevokeCredentialInput!): AdminRevokeCredentialResponse!
+  createExamSchedule(input: CreateExamScheduleInput!): ExamScheduleDto!
+  updateExamSchedule(input: UpdateExamScheduleInput!): ExamScheduleDto!
+  deleteExamSchedule(examId: String!): AssignBlockchainRoleResponse!
+  markNotificationAsRead(input: MarkNotificationReadInput!): MarkNotificationReadResponse!
+  markAllNotificationsAsRead: MarkNotificationReadResponse!
+  deleteNotification(notificationId: String!): MarkNotificationReadResponse!
+  uploadMarks(input: UploadMarksInput!): UploadMarksResponse!
 }
 
 input VerifySignatureInput {
@@ -196,13 +366,24 @@ input VerifyOTPDto {
   studentId: String!
 }
 
+input SendEmailOTPDto {
+  email: String!
+  name: String
+}
+
+input VerifyEmailOTPDto {
+  email: String!
+  otp: String!
+  name: String
+}
+
 input HashDataDto {
   data: String!
   algorithm: String! = "sha256"
 }
 
-input AssignRoleInput {
-  userAddress: String!
+input AssignBlockchainRoleInput {
+  userWalletAddress: String!
   role: String!
 }
 
@@ -228,4 +409,76 @@ input IssueBlockchainCredentialInput {
   studentAddress: String!
   subject: String!
   credentialData: String!
+}
+
+input CreateTeacherSubjectInput {
+  teacherWalletAddress: String!
+  subjectCode: String!
+  subjectName: String!
+  academicYear: String!
+  semester: String!
+  batches: [String!]!
+  department: String
+}
+
+input UpdateTeacherSubjectInput {
+  subjectId: String!
+  subjectCode: String
+  subjectName: String
+  academicYear: String
+  semester: String
+  batches: [String!]
+  department: String
+  isActive: Boolean
+}
+
+input AdminRevokeCredentialInput {
+  credentialId: String!
+  reason: String
+}
+
+input CreateExamScheduleInput {
+  subject: String!
+  examName: String!
+  examType: String!
+  examDate: DateTime!
+  duration: Float!
+  totalMarks: Float!
+  passingMarks: Float!
+  venue: String!
+  teacherWalletAddress: String!
+  academicYear: String!
+  semester: String!
+  batch: String!
+  description: String
+}
+
+input UpdateExamScheduleInput {
+  examId: String!
+  subject: String
+  examName: String
+  examType: String
+  examDate: DateTime
+  duration: Float
+  totalMarks: Float
+  passingMarks: Float
+  venue: String
+  teacherWalletAddress: String
+  status: String
+  description: String
+}
+
+input MarkNotificationReadInput {
+  notificationId: String!
+}
+
+input UploadMarksInput {
+  studentWalletAddress: String!
+  subject: String!
+  marks: Float!
+  examType: String!
+  academicYear: String!
+  semester: String!
+  grade: String
+  institution: String
 }
