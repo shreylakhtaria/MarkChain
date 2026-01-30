@@ -1,4 +1,5 @@
 import { InputType, Field, ObjectType } from '@nestjs/graphql';
+import { IsString, Matches } from 'class-validator';
 
 @ObjectType()
 export class NotificationDto {
@@ -48,6 +49,8 @@ export class NotificationDto {
 @InputType()
 export class MarkNotificationReadInput {
   @Field()
+  @IsString()
+  @Matches(/^[a-f0-9]{24}$/, { message: 'Invalid MongoDB ObjectId for notification' })
   notificationId: string;
 }
 

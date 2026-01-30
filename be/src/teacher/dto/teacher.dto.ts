@@ -1,4 +1,5 @@
 import { InputType, Field, ObjectType } from '@nestjs/graphql';
+import { IsString, IsNumber, IsOptional, Min, Max, Length, Matches } from 'class-validator';
 
 // Course Setup DTOs
 @ObjectType()
@@ -44,27 +45,46 @@ export class SubjectInfoDto {
 @InputType()
 export class UploadMarksInput {
   @Field()
+  @IsString()
+  @Matches(/^0x[a-fA-F0-9]{40}$/, { message: 'Invalid Ethereum wallet address' })
   studentWalletAddress: string;
 
   @Field()
+  @IsString()
+  @Length(2, 100, { message: 'Subject must be between 2 and 100 characters' })
   subject: string;
 
   @Field()
+  @IsNumber()
+  @Min(0, { message: 'Marks cannot be negative' })
+  @Max(100, { message: 'Marks cannot exceed 100' })
   marks: number;
 
   @Field()
+  @IsString()
+  @Matches(/^(midterm|final|quiz|assignment|practical)$/, { message: 'Invalid exam type' })
   examType: string;
 
   @Field()
+  @IsString()
+  @Matches(/^\d{4}-\d{4}$/, { message: 'Academic year must be in format YYYY-YYYY' })
   academicYear: string;
 
   @Field()
+  @IsString()
+  @Matches(/^(1|2|3|4|5|6|7|8)$/, { message: 'Semester must be between 1 and 8' })
   semester: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @Matches(/^(A\+|A|B\+|B|C|D|F)$/, { message: 'Grade must be A+, A, B+, B, C, D, or F' })
   grade?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @Length(3, 200)
   institution?: string;
 }
 
