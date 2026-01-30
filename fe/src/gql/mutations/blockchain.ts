@@ -2,12 +2,11 @@ import { gql } from '@apollo/client';
 
 // ADMIN OPERATIONS
 export const ASSIGN_BLOCKCHAIN_ROLE = gql`
-  mutation AssignBlockchainRole($input: AssignRoleInput!) {
+  mutation AssignBlockchainRole($input: AssignBlockchainRoleInput!) {
     assignBlockchainRole(input: $input) {
       success
-      transactionHash
       message
-      error
+      txHash
     }
   }
 `;

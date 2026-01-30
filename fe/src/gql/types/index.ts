@@ -93,7 +93,7 @@ export interface VerifyOTPResponse {
 
 // Blockchain Input Types (matching backend schema)
 export interface AssignRoleInput {
-  userAddress: string;
+  userWalletAddress: string;
   role: string;
 }
 
@@ -192,7 +192,11 @@ export interface TestIPFSConnectionResponse {
 
 // Blockchain Mutation Response Types
 export interface AssignBlockchainRoleResponse {
-  assignBlockchainRole: BlockchainOperationResponse;
+  assignBlockchainRole: {
+    success: boolean;
+    message: string;
+    txHash?: string;
+  };
 }
 
 export interface AssignSubjectToTeacherResponse {
