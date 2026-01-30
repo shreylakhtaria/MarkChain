@@ -14,15 +14,6 @@ export const GET_MY_BLOCKCHAIN_STATUS = gql`
   }
 `;
 
-// TEACHER QUERIES
-export const GET_MY_ASSIGNED_SUBJECTS = gql`
-  query GetMyAssignedSubjects {
-    getMyAssignedSubjects
-  }
-`;
-
-
-
 // STUDENT QUERIES
 export const GET_MY_SUBJECT_CREDENTIAL = gql`
   query GetMySubjectCredential($subject: String!) {

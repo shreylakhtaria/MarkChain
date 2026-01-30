@@ -218,3 +218,199 @@ export interface RegisterUserDIDResponse {
 export interface IssueBlockchainCredentialResponse {
   issueBlockchainCredential: BlockchainOperationResponse;
 }
+
+// Teacher Subject Types
+export interface TeacherSubject {
+  _id: string;
+  teacherDID?: string;
+  teacherName?: string;
+  teacherWalletAddress: string;
+  subjectCode: string;
+  subjectName: string;
+  academicYear: string;
+  semester: string;
+  batches: string[];
+  department?: string;
+  isActive?: boolean;
+}
+
+export interface UpdateTeacherSubjectInput {
+  subjectId: string;
+  subjectName?: string;
+  batches?: string[];
+  semester?: string;
+}
+
+export interface DeleteTeacherSubjectResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface GetAllTeacherSubjectsResponse {
+  getAllTeacherSubjects: TeacherSubject[];
+}
+
+export interface GetTeacherSubjectsByTeacherResponse {
+  getTeacherSubjectsByTeacher: TeacherSubject[];
+}
+
+export interface UpdateTeacherSubjectResponse {
+  updateTeacherSubject: TeacherSubject;
+}
+
+export interface DeleteTeacherSubjectMutationResponse {
+  deleteTeacherSubject: DeleteTeacherSubjectResponse;
+}
+
+// Exam Schedule Types
+export interface ExamSchedule {
+  _id: string;
+  subject: string;
+  examName: string;
+  examType?: string;
+  examDate: string;
+  duration?: number;
+  totalMarks?: number;
+  passingMarks?: number;
+  venue: string;
+  teacherWalletAddress?: string;
+  teacherDID?: string;
+  academicYear?: string;
+  semester?: string;
+  batch?: string;
+  description?: string;
+  status: string;
+}
+
+export interface CreateExamScheduleInput {
+  subject: string;
+  examName: string;
+  examType: string;
+  examDate: string;
+  duration: number;
+  totalMarks: number;
+  passingMarks: number;
+  venue: string;
+  teacherWalletAddress: string;
+  academicYear: string;
+  semester: string;
+  batch: string;
+  description?: string;
+}
+
+export interface UpdateExamScheduleInput {
+  examId: string;
+  venue?: string;
+  examDate?: string;
+  status?: string;
+}
+
+export interface GetAllExamSchedulesResponse {
+  getAllExamSchedules: ExamSchedule[];
+}
+
+export interface GetExamScheduleByIdResponse {
+  getExamScheduleById: ExamSchedule;
+}
+
+export interface CreateExamScheduleResponse {
+  createExamSchedule: ExamSchedule;
+}
+
+export interface UpdateExamScheduleResponse {
+  updateExamSchedule: ExamSchedule;
+}
+
+export interface DeleteExamScheduleResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface DeleteExamScheduleMutationResponse {
+  deleteExamSchedule: DeleteExamScheduleResponse;
+}
+
+// Credential Database Types (different from blockchain)
+export interface RevokeCredentialDatabaseInput {
+  credentialId: string;
+  reason: string;
+}
+
+export interface RevokeCredentialDatabaseResult {
+  success: boolean;
+  message: string;
+  credentialId: string;
+}
+
+export interface RevokeCredentialDatabaseResponse {
+  revokeCredential: RevokeCredentialDatabaseResult;
+}
+
+// Student Query Types
+export interface GetStudentsByBatchResponse {
+  getStudentsByBatch: User[];
+}
+
+// Update User Profile Input (if not already defined)
+export interface UpdateUserProfileDto {
+  name?: string;
+  studentId?: string;
+  email?: string;
+}
+
+export interface UpdateUserProfileResponse {
+  updateUserProfile: User;
+}
+
+// Teacher-Specific Types
+export interface TeacherSubjectDetail {
+  subjectCode: string;
+  subjectName: string;
+  academicYear: string;
+  semester: string;
+  batches: string[];
+}
+
+export interface TeacherCourseSetup {
+  teacherDID: string;
+  teacherName: string;
+  assignedSubjects: TeacherSubjectDetail[];
+  totalStudents: number;
+  totalCredentials: number;
+}
+
+export interface TeacherStudent {
+  studentDID: string;
+  studentWalletAddress: string;
+  studentName: string;
+  studentId: string;
+  batch: string;
+  hasCredentials: boolean;
+  subjects: string[];
+}
+
+export interface TeacherCredential {
+  credentialId: string;
+  studentDID: string;
+  studentName: string;
+  subject: string;
+  grade: string;
+  marks: number;
+  issuedAt: string;
+  ipfsHash: string;
+  transactionHash: string;
+}
+
+export interface GetTeacherCourseSetupResponse {
+  getTeacherCourseSetup: TeacherCourseSetup;
+}
+
+export interface GetTeacherStudentsResponse {
+  getTeacherStudents: TeacherStudent[];
+}
+
+export interface GetTeacherCredentialsResponse {
+  getTeacherCredentials: TeacherCredential[];
+}
+
+

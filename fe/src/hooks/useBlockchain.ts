@@ -10,7 +10,6 @@ import {
   ISSUE_BLOCKCHAIN_CREDENTIAL,
   // Blockchain Queries
   GET_MY_BLOCKCHAIN_STATUS,
-  GET_MY_ASSIGNED_SUBJECTS,
   GET_MY_SUBJECT_CREDENTIAL,
   GET_MY_BLOCKCHAIN_CREDENTIALS,
   VERIFY_BLOCKCHAIN_CREDENTIAL,
@@ -32,7 +31,6 @@ import {
   RegisterUserDIDResponse,
   IssueBlockchainCredentialResponse,
   GetMyBlockchainStatusResponse,
-  GetMyAssignedSubjectsResponse,
   GetMySubjectCredentialResponse,
   GetMyBlockchainCredentialsResponse,
   VerifyBlockchainCredentialResponse,
@@ -90,15 +88,9 @@ export const useIssueBlockchainCredential = () => {
 };
 
 
-
 // User Queries
 export const useGetMyBlockchainStatus = () => {
   return useQuery<GetMyBlockchainStatusResponse>(GET_MY_BLOCKCHAIN_STATUS);
-};
-
-// Teacher Queries
-export const useGetMyAssignedSubjects = () => {
-  return useQuery<GetMyAssignedSubjectsResponse>(GET_MY_ASSIGNED_SUBJECTS);
 };
 
 // Student Queries
@@ -146,9 +138,9 @@ export const useTestIPFSConnection = () => {
 // Hook to check if user has blockchain setup completed
 export const useBlockchainSetupStatus = () => {
   const { data, loading, error, refetch } = useGetMyBlockchainStatus();
-  
+
   const status = data?.getMyBlockchainStatus;
-  
+
   // Debug logging to help troubleshoot
   console.log('Blockchain Status Debug:', {
     data,
@@ -159,14 +151,14 @@ export const useBlockchainSetupStatus = () => {
     didRegistered: status?.didRegistered,
     hasBlockchainRole: status?.hasBlockchainRole
   });
-  
+
   // For setup to be complete, user just needs wallet address linked
   // Temporary: Allow access if user has any blockchain status data or if we can't fetch it
   // This prevents blocking users who have completed MetaMask setup
-  const isSetupComplete = status ? 
-    !!status.walletAddress : 
+  const isSetupComplete = status ?
+    !!status.walletAddress :
     true; // Allow access by default if status can't be determined
-  
+
   return {
     status,
     isSetupComplete,
@@ -176,34 +168,18 @@ export const useBlockchainSetupStatus = () => {
   };
 };
 
-// Hook for teacher subject management
-export const useTeacherSubjectManagement = () => {
-  const { data: subjects, loading, error, refetch } = useGetMyAssignedSubjects();
-  const [assignSubject] = useAssignSubjectToTeacher();
-  const [removeSubject] = useRemoveSubjectFromTeacher();
-  
-  return {
-    subjects: subjects?.getMyAssignedSubjects || [],
-    loading,
-    error,
-    refetch,
-    assignSubject,
-    removeSubject
-  };
-};
-
 // Hook for teacher credential management
 export const useTeacherCredentialManagement = () => {
   const [issueCredential] = useIssueBlockchainCredential();
   const [revokeCredential] = useRevokeBlockchainCredential();
-  
+
   return {
     issueCredential,
     revokeCredential,
     issuedCredentials: [], // Backend doesn't provide this query yet
     loading: false,
     error: null,
-    refetch: () => {}
+    refetch: () => { }
   };
 };
 
@@ -214,14 +190,14 @@ export const useTeacherStudentsBySubject = (subject: string) => {
     students: [],
     loading: false,
     error: null,
-    refetch: () => {}
+    refetch: () => { }
   };
 };
 
 // Hook for student credentials management
 export const useStudentCredentials = () => {
   const { data, loading, error, refetch } = useGetMyBlockchainCredentials();
-  
+
   return {
     credentials: data?.getMyBlockchainCredentials || [],
     loading,
