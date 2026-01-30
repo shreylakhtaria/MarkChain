@@ -327,21 +327,21 @@
           `,
         };
 
-        await this.transporter.sendMail(mailOptions);
-        return true;
-      } catch (error) {
-        console.error('Error sending OTP email:', error);
-        return false;
+          await this.transporter.sendMail(mailOptions);
+          return true;
+        } catch (error) {
+          console.error('Error sending OTP email:', error);
+          return false;
+        }
       }
-    }
 
-    async verifyEmailConfiguration(): Promise<boolean> {
-      try {
-        await this.transporter.verify();
-        return true;
-      } catch (error) {
-        console.error('Email configuration verification failed:', error);
-        return false;
+      async verifyEmailConfiguration(): Promise<boolean> {
+        try {
+          await this.transporter.verify();
+          return true;
+        } catch (error) {
+          console.error('Email configuration verification failed:', error);
+          return false;
+        }
       }
     }
-  }
