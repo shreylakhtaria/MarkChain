@@ -4,7 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
-import depthLimit from 'graphql-depth-limit';
+import * as depthLimit from 'graphql-depth-limit';
 import { join } from 'path';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
