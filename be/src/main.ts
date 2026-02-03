@@ -11,13 +11,18 @@ async function bootstrap() {
   // Request timeout (30 seconds)
   app.use(timeout('30s'));
   
-  // Security headers with Helmet
-  app.use(helmet());
+  // Security headers with Helmet - configured for GraphQL
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+      crossOriginEmbedderPolicy: false,
+    })
+  );
   
-  // Enable global validation pipe
+  // Enable global validation pipe with less strict settings
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true, // Strip properties that don't have decorators
-    forbidNonWhitelisted: true, // Throw error if non-whitelisted properties are present
+    forbidNonWhitelisted: false, // Changed to false - don't throw errors for extra properties
     transform: true, // Automatically transform payloads to DTO instances
     transformOptions: {
       enableImplicitConversion: true, // Convert primitive types automatically
@@ -26,8 +31,12 @@ async function bootstrap() {
   
   // Enable CORS for frontend
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: process.env.NODE_ENV === 'production'
+      ? process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000']
+      : ['http://localhost:3000', 'http://localhost:3001'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
 
