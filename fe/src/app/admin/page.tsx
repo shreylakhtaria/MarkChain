@@ -29,7 +29,7 @@ export default function AdminDashboard() {
         
         <div className="space-y-6 p-6 pt-4">
           {/* Top Row - Students and Analytics */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[400px]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[600px]">
             {/* Students List */}
             <div className="backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:via-transparent before:to-transparent before:rounded-2xl" style={{ backgroundColor: '#12121a' }}>
               <MagicBento 
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Bottom Row - Blockchain Management */}
-          <div className="backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:via-transparent before:to-transparent before:rounded-2xl h-[400px]" style={{ backgroundColor: '#12121a' }}>
+          <div className="backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:via-transparent before:to-transparent before:rounded-2xl h-[700px]" style={{ backgroundColor: '#12121a' }}>
             <MagicBento 
               textAutoHide={true}
               enableStars={false}

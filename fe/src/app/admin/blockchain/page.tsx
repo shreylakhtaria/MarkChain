@@ -26,14 +26,17 @@ interface AssignRoleModalProps {
 
 function AssignRoleModal({ isOpen, onClose, onAssign, users, loading }: AssignRoleModalProps) {
   const [selectedUser, setSelectedUser] = useState("");
-  const [selectedRole, setSelectedRole] = useState("STUDENT_ROLE");
+  // Role hash constants (keccak256)
+  const STUDENT_ROLE_HASH = "0x36a5c4aaacb6b388bbd448bf11096b7dafc5652bcc9046084fd0e95b1fb0b2cc";
+  const TEACHER_ROLE_HASH = "0xd16e204b8a42a15ab0ea6bb8ec1ecdfbe69f38074fc865323af19efe7d9573d9";
+  const [selectedRole, setSelectedRole] = useState(STUDENT_ROLE_HASH);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedUser) {
       onAssign(selectedUser, selectedRole);
       setSelectedUser("");
-      setSelectedRole("STUDENT_ROLE");
+      setSelectedRole(STUDENT_ROLE_HASH);
       onClose();
     }
   };
@@ -63,7 +66,7 @@ function AssignRoleModal({ isOpen, onClose, onAssign, users, loading }: AssignRo
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Blockchain Role
@@ -73,8 +76,8 @@ function AssignRoleModal({ isOpen, onClose, onAssign, users, loading }: AssignRo
               onChange={(e) => setSelectedRole(e.target.value)}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white"
             >
-              <option value="STUDENT_ROLE">Student Role</option>
-              <option value="TEACHER_ROLE">Teacher Role</option>
+              <option value={STUDENT_ROLE_HASH}>Student Role</option>
+              <option value={TEACHER_ROLE_HASH}>Teacher Role</option>
             </select>
           </div>
 
@@ -167,7 +170,7 @@ function SubjectManagementModal({ isOpen, onClose, onAssign, onRemove, teachers,
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Subject
@@ -193,11 +196,10 @@ function SubjectManagementModal({ isOpen, onClose, onAssign, onRemove, teachers,
             <button
               type="submit"
               disabled={loading}
-              className={`flex-1 px-4 py-2 rounded-lg transition-colors text-white ${
-                action === 'assign' 
-                  ? 'bg-green-600 hover:bg-green-700' 
-                  : 'bg-red-600 hover:bg-red-700'
-              } disabled:opacity-50`}
+              className={`flex-1 px-4 py-2 rounded-lg transition-colors text-white ${action === 'assign'
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-red-600 hover:bg-red-700'
+                } disabled:opacity-50`}
             >
               {loading ? 'Processing...' : (action === 'assign' ? 'Assign' : 'Remove')}
             </button>
@@ -255,7 +257,7 @@ function RevokeCredentialModal({ isOpen, onClose, onRevoke, students, loading }:
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Subject
@@ -318,16 +320,16 @@ export default function AdminBlockchainPage() {
       const result = await assignRole({
         variables: {
           input: {
-            userAddress,
+            userWalletAddress: userAddress,
             role
           }
         }
       });
 
       if (result.data?.assignBlockchainRole.success) {
-        alert(`Successfully assigned ${role} to user`);
+        alert(`Successfully assigned role to user`);
       } else {
-        alert(`Failed to assign role: ${result.data?.assignBlockchainRole.error || 'Unknown error'}`);
+        alert(`Failed to assign role: ${result.data?.assignBlockchainRole.message || 'Unknown error'}`);
       }
     } catch (error: any) {
       alert(`Error: ${error.message}`);
@@ -404,7 +406,7 @@ export default function AdminBlockchainPage() {
     <ProtectedRoute>
       <div className="min-h-screen" style={{ backgroundColor: '#0b0b12' }}>
         <DynamicNavbar />
-        
+
         <div className="p-6 pb-2">
           <h1 className="text-3xl font-bold text-white mb-2">
             Blockchain Administration
@@ -417,7 +419,7 @@ export default function AdminBlockchainPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 pt-4">
           {/* System Status */}
           <div className="backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:via-transparent before:to-transparent before:rounded-2xl" style={{ backgroundColor: '#12121a' }}>
-            <MagicBento 
+            <MagicBento
               textAutoHide={true}
               enableStars={false}
               enableSpotlight={true}
@@ -442,7 +444,7 @@ export default function AdminBlockchainPage() {
                         {networkInfo?.isConnected ? 'Connected' : 'Disconnected'}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                       <span className="text-gray-300">IPFS Connection</span>
                       <span className={`flex items-center ${ipfsConnected ? 'text-green-400' : 'text-red-400'}`}>
@@ -477,7 +479,7 @@ export default function AdminBlockchainPage() {
 
           {/* User Statistics */}
           <div className="backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:via-transparent before:to-transparent before:rounded-2xl" style={{ backgroundColor: '#12121a' }}>
-            <MagicBento 
+            <MagicBento
               textAutoHide={true}
               enableStars={false}
               enableSpotlight={true}
