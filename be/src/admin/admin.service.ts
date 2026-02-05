@@ -38,8 +38,23 @@ export class AdminService {
     }
 
     try {
-      // Assign role on blockchain
-      const txHash = await this.blockchainService.assignRole(input.userWalletAddress, input.role);
+      // Get role constants from blockchain service
+      const roles = this.blockchainService.getRoleConstants();
+      let roleConstant: string;
+
+      // Convert role string to blockchain role constant
+      if (input.role === 'TEACHER_ROLE') {
+        roleConstant = roles.TEACHER_ROLE;
+      } else if (input.role === 'STUDENT_ROLE') {
+        roleConstant = roles.STUDENT_ROLE;
+      } else if (input.role === 'ADMIN_ROLE') {
+        roleConstant = roles.DEFAULT_ADMIN_ROLE;
+      } else {
+        throw new BadRequestException('Invalid role. Use TEACHER_ROLE, STUDENT_ROLE, or ADMIN_ROLE');
+      }
+
+      // Assign role on blockchain using grantRole (not assignRole)
+      const txHash = await this.blockchainService.grantRole(roleConstant, input.userWalletAddress);
 
       // Update user in database
       user.blockchainRole = input.role;

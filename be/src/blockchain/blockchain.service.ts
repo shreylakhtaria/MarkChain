@@ -20,9 +20,9 @@ export class BlockchainService {
       const privateKey = this.configService.get<string>('BLOCKCHAIN_PRIVATE_KEY');
       const contractAddress = this.configService.get<string>('CONTRACT_ADDRESS');
 
-      this.logger.log(`Blockchain Config - RPC URL: ${rpcUrl}`);
-      this.logger.log(`Blockchain Config - Private Key: ${privateKey ? privateKey.substring(0, 10) + '...' : 'NOT SET'}`);
-      this.logger.log(`Blockchain Config - Contract Address: ${contractAddress}`);
+      // this.logger.log(`Blockchain Config - RPC URL: ${rpcUrl}`);
+      // this.logger.log(`Blockchain Config - Private Key: ${privateKey ? privateKey.substring(0, 10) + '...' : 'NOT SET'}`);
+      // this.logger.log(`Blockchain Config - Contract Address: ${contractAddress}`);
 
       if (!rpcUrl || !privateKey || !contractAddress) {
         throw new Error('Missing required blockchain configuration');
@@ -257,5 +257,197 @@ export class BlockchainService {
 
   getWalletAddress(): string {
     return this.wallet.address;
+  }
+
+  /**
+   * 1. Create a new credential for a student
+   * @param studentAddress - Student's blockchain address
+   * @param subject - Subject name
+   * @param ipfsHash - IPFS hash of credential data
+   * @param validityPeriod - Validity period in seconds (e.g., 31536000 = 1 year)
+   * @returns Transaction hash
+   */
+  async createCredential(
+    studentAddress: string,
+    subject: string,
+    ipfsHash: string,
+    validityPeriod: number
+  ): Promise<string> {
+    try {
+      const tx = await this.contract.createCredential(
+        studentAddress,
+        subject,
+        ipfsHash,
+        validityPeriod
+      );
+      await tx.wait();
+      this.logger.log(
+        `Credential created for ${studentAddress} in ${subject} with ${validityPeriod}s validity`
+      );
+      return tx.hash;
+    } catch (error) {
+      this.logger.error(`Failed to create credential: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 2. Update credential with a specific component grade
+   * @param studentAddress - Student's blockchain address
+   * @param subject - Subject name
+   * @param component - Component name (e.g., "Midterm", "Final", "Assignment 1")
+   * @param ipfsHash - IPFS hash of the component grade data
+   * @returns Transaction hash
+   */
+  async updateCredentialWithComponent(
+    studentAddress: string,
+    subject: string,
+    component: string,
+    ipfsHash: string
+  ): Promise<string> {
+    try {
+      const tx = await this.contract.updateCredentialWithComponent(
+        studentAddress,
+        subject,
+        component,
+        ipfsHash
+      );
+      await tx.wait();
+      this.logger.log(
+        `Component '${component}' updated for ${studentAddress} in ${subject}`
+      );
+      return tx.hash;
+    } catch (error) {
+      this.logger.error(`Failed to update credential component: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 3. Get student's own credential (called by student)
+   * @param subject - Subject name
+   * @returns Credential details with all metadata
+   */
+  async getMyCredential(subject: string): Promise<{
+    ipfsHash: string;
+    version: bigint;
+    totalComponents: bigint;
+    createdAt: bigint;
+    lastUpdatedAt: bigint;
+    expiresAt: bigint;
+    revoked: boolean;
+    isExpired: boolean;
+  }> {
+    try {
+      const result = await this.contract.getMyCredential(subject);
+      this.logger.log(`Retrieved credential for subject: ${subject}`);
+      
+      return {
+        ipfsHash: result.ipfsHash,
+        version: result.version,
+        totalComponents: result.totalComponents,
+        createdAt: result.createdAt,
+        lastUpdatedAt: result.lastUpdatedAt,
+        expiresAt: result.expiresAt,
+        revoked: result.revoked,
+        isExpired: result.isExpired
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get my credential: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 4. Get student's credential (called by admin/teacher)
+   * @param studentAddress - Student's blockchain address
+   * @param subject - Subject name
+   * @returns Credential details with all metadata
+   */
+  async getStudentCredential(
+    studentAddress: string,
+    subject: string
+  ): Promise<{
+    ipfsHash: string;
+    version: bigint;
+    totalComponents: bigint;
+    createdAt: bigint;
+    lastUpdatedAt: bigint;
+    expiresAt: bigint;
+    revoked: boolean;
+    isExpired: boolean;
+  }> {
+    try {
+      const result = await this.contract.getStudentCredential(studentAddress, subject);
+      this.logger.log(`Retrieved credential for ${studentAddress} in ${subject}`);
+      
+      return {
+        ipfsHash: result.ipfsHash,
+        version: result.version,
+        totalComponents: result.totalComponents,
+        createdAt: result.createdAt,
+        lastUpdatedAt: result.lastUpdatedAt,
+        expiresAt: result.expiresAt,
+        revoked: result.revoked,
+        isExpired: result.isExpired
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get student credential: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 5. Check if a credential is valid (not revoked and not expired)
+   * @param studentAddress - Student's blockchain address
+   * @param subject - Subject name
+   * @returns True if valid, false otherwise
+   */
+  async isCredentialValid(studentAddress: string, subject: string): Promise<boolean> {
+    try {
+      const isValid = await this.contract.isCredentialValid(studentAddress, subject);
+      this.logger.log(
+        `Credential validity check for ${studentAddress} in ${subject}: ${isValid}`
+      );
+      return isValid;
+    } catch (error) {
+      this.logger.error(`Failed to check credential validity: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 6. Create a new subject in the system (Admin only)
+   * @param subject - Subject name
+   * @returns Transaction hash
+   */
+  async createSubject(subject: string): Promise<string> {
+    try {
+      const tx = await this.contract.createSubject(subject);
+      await tx.wait();
+      this.logger.log(`Subject created: ${subject}`);
+      return tx.hash;
+    } catch (error) {
+      this.logger.error(`Failed to create subject: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 7. Register a component for a subject (Admin only)
+   * @param subject - Subject name
+   * @param component - Component name (e.g., "Midterm", "Final")
+   * @returns Transaction hash
+   */
+  async registerComponent(subject: string, component: string): Promise<string> {
+    try {
+      const tx = await this.contract.registerComponent(subject, component);
+      await tx.wait();
+      this.logger.log(`Component '${component}' registered for subject: ${subject}`);
+      return tx.hash;
+    } catch (error) {
+      this.logger.error(`Failed to register component: ${error.message}`);
+      throw error;
+    }
   }
 }
