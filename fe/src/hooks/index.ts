@@ -8,3 +8,4 @@ export * from './useExamSchedule';
 export * from './useCredentials';
 export * from './useStudents';
 export * from './useTeacher';
+export * from './useCredentialManagement';

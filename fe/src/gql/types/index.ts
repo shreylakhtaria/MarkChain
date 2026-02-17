@@ -418,3 +418,84 @@ export interface GetTeacherCredentialsResponse {
 }
 
 
+// Credential Management Types
+export interface CreateCredentialInput {
+  studentAddress: string;
+  subject: string;
+  ipfsHash: string;
+  validityPeriod: number;
+}
+
+export interface UpdateCredentialWithComponentInput {
+  studentAddress: string;
+  subject: string;
+  component: string;
+  ipfsHash: string;
+}
+
+export interface CreateSubjectInput {
+  subject: string;
+}
+
+export interface RegisterComponentInput {
+  subject: string;
+  component: string;
+}
+
+export interface GetStudentCredentialInput {
+  studentAddress: string;
+  subject: string;
+}
+
+export interface IsCredentialValidInput {
+  studentAddress: string;
+  subject: string;
+}
+
+export interface CredentialInfo {
+  ipfsHash: string;
+  version: number;
+  totalComponents: number;
+  createdAt: number;
+  lastUpdatedAt: number;
+  expiresAt: number;
+  revoked: boolean;
+  isExpired: boolean;
+}
+
+export interface CredentialMutationResponse {
+  transactionHash: string;
+  success: boolean;
+  message: string;
+}
+
+export interface CreateCredentialResponse {
+  createCredential: CredentialMutationResponse;
+}
+
+export interface UpdateCredentialWithComponentResponse {
+  updateCredentialWithComponent: CredentialMutationResponse;
+}
+
+export interface CreateSubjectResponse {
+  createSubject: CredentialMutationResponse;
+}
+
+export interface RegisterComponentResponse {
+  registerComponent: CredentialMutationResponse;
+}
+
+export interface GetMyCredentialResponse {
+  getMyCredential: CredentialInfo;
+}
+
+export interface GetStudentCredentialResponse {
+  getStudentCredential: CredentialInfo;
+}
+
+export interface IsCredentialValidResponse {
+  isCredentialValid: boolean;
+}
+
+
+

@@ -13,6 +13,12 @@ import {
   useGetBlockchainNetworkInfo,
   useTestIPFSConnection
 } from "@/hooks/useBlockchain";
+import {
+  useCreateCredential,
+  useUpdateCredentialWithComponent,
+  useCreateSubject,
+  useRegisterComponent
+} from "@/hooks/useCredentialManagement";
 import { useGetAllUsers } from "@/hooks/useGraphQL";
 import { UserRole } from "@/gql/types";
 
@@ -26,17 +32,17 @@ interface AssignRoleModalProps {
 
 function AssignRoleModal({ isOpen, onClose, onAssign, users, loading }: AssignRoleModalProps) {
   const [selectedUser, setSelectedUser] = useState("");
-  // Role hash constants (keccak256)
-  const STUDENT_ROLE_HASH = "0x36a5c4aaacb6b388bbd448bf11096b7dafc5652bcc9046084fd0e95b1fb0b2cc";
-  const TEACHER_ROLE_HASH = "0xd16e204b8a42a15ab0ea6bb8ec1ecdfbe69f38074fc865323af19efe7d9573d9";
-  const [selectedRole, setSelectedRole] = useState(STUDENT_ROLE_HASH);
+  // Role string constants (backend will convert to keccak256 hashes)
+  const STUDENT_ROLE = "STUDENT_ROLE";
+  const TEACHER_ROLE = "TEACHER_ROLE";
+  const [selectedRole, setSelectedRole] = useState(STUDENT_ROLE);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedUser) {
       onAssign(selectedUser, selectedRole);
       setSelectedUser("");
-      setSelectedRole(STUDENT_ROLE_HASH);
+      setSelectedRole(STUDENT_ROLE);
       onClose();
     }
   };
@@ -76,8 +82,8 @@ function AssignRoleModal({ isOpen, onClose, onAssign, users, loading }: AssignRo
               onChange={(e) => setSelectedRole(e.target.value)}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white"
             >
-              <option value={STUDENT_ROLE_HASH}>Student Role</option>
-              <option value={TEACHER_ROLE_HASH}>Teacher Role</option>
+              <option value={STUDENT_ROLE}>Student Role</option>
+              <option value={TEACHER_ROLE}>Teacher Role</option>
             </select>
           </div>
 
@@ -299,12 +305,21 @@ export default function AdminBlockchainPage() {
   const [showAssignRoleModal, setShowAssignRoleModal] = useState(false);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
+  const [showCredentialModal, setShowCredentialModal] = useState(false);
+  const [showComponentModal, setShowComponentModal] = useState(false);
+  const [showSubjectCreateModal, setShowSubjectCreateModal] = useState(false);
 
   // Hooks for blockchain operations
   const [assignRole, { loading: assignRoleLoading }] = useAssignBlockchainRole();
   const [assignSubject, { loading: assignSubjectLoading }] = useAssignSubjectToTeacher();
   const [removeSubject, { loading: removeSubjectLoading }] = useRemoveSubjectFromTeacher();
   const [revokeCredential, { loading: revokeCredentialLoading }] = useRevokeBlockchainCredential();
+
+  // Hooks for credential management
+  const [createCredential, { loading: createCredentialLoading }] = useCreateCredential();
+  const [updateCredentialComponent, { loading: updateComponentLoading }] = useUpdateCredentialWithComponent();
+  const [createSubject, { loading: createSubjectLoading }] = useCreateSubject();
+  const [registerComponent, { loading: registerComponentLoading }] = useRegisterComponent();
 
   // Get network info and users
   const { data: networkData } = useGetBlockchainNetworkInfo();
@@ -392,12 +407,100 @@ export default function AdminBlockchainPage() {
       if (result.data?.revokeBlockchainCredential.success) {
         alert(`Successfully revoked credential for subject ${subject}`);
       } else {
-        alert(`Failed to revoke credential: ${result.data?.revokeBlockchainCredential.error || 'Unknown error'}`);
+        alert(`Failed to revoke credential: ${result.data?.revokeBlockchainCredential.message || 'Unknown error'}`);
       }
     } catch (error: any) {
       alert(`Error: ${error.message}`);
     }
   };
+
+  const handleCreateCredential = async (studentAddress: string, subject: string, ipfsHash: string, validityPeriod: number) => {
+    try {
+      const result = await createCredential({
+        variables: {
+          input: {
+            studentAddress,
+            subject,
+            ipfsHash,
+            validityPeriod
+          }
+        }
+      });
+
+      if (result.data?.createCredential.success) {
+        alert(`Successfully created credential for ${subject}`);
+      } else {
+        alert(`Failed to create credential: ${result.data?.createCredential.message || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    }
+  };
+
+  const handleUpdateCredentialComponent = async (studentAddress: string, subject: string, component: string, ipfsHash: string) => {
+    try {
+      const result = await updateCredentialComponent({
+        variables: {
+          input: {
+            studentAddress,
+            subject,
+            component,
+            ipfsHash
+          }
+        }
+      });
+
+      if (result.data?.updateCredentialWithComponent.success) {
+        alert(`Successfully updated credential component for ${subject}`);
+      } else {
+        alert(`Failed to update component: ${result.data?.updateCredentialWithComponent.message || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    }
+  };
+
+  const handleCreateSubject = async (subject: string) => {
+    try {
+      const result = await createSubject({
+        variables: {
+          input: {
+            subject
+          }
+        }
+      });
+
+      if (result.data?.createSubject.success) {
+        alert(`Successfully created subject: ${subject}`);
+      } else {
+        alert(`Failed to create subject: ${result.data?.createSubject.message || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    }
+  };
+
+  const handleRegisterComponent = async (subject: string, component: string) => {
+    try {
+      const result = await registerComponent({
+        variables: {
+          input: {
+            subject,
+            component
+          }
+        }
+      });
+
+      if (result.data?.registerComponent.success) {
+        alert(`Successfully registered component ${component} for ${subject}`);
+      } else {
+        alert(`Failed to register component: ${result.data?.registerComponent.message || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    }
+  };
+
 
   const networkInfo = networkData?.getBlockchainNetworkInfo;
   const ipfsConnected = ipfsData?.testIPFSConnection;
@@ -564,6 +667,72 @@ export default function AdminBlockchainPage() {
               <p className="text-sm text-gray-400">Remove blockchain credentials from students</p>
             </div>
           </button>
+        </div>
+
+        {/* Credential Management Actions */}
+        <div className="px-6 pb-6">
+          <h2 className="text-2xl font-bold text-white mb-4">Credential Management</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button
+              onClick={() => setShowCredentialModal(true)}
+              className="p-4 backdrop-blur-xl border border-white/10 rounded-xl hover:border-purple-500/30 transition-all duration-300 bg-gradient-to-br from-purple-500/5 to-purple-600/5 hover:from-purple-500/10 hover:to-purple-600/10 group"
+            >
+              <div className="text-center">
+                <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-500/30 transition-colors">
+                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white mb-1">Create Credential</h3>
+                <p className="text-xs text-gray-400">Issue new credential</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setShowComponentModal(true)}
+              className="p-4 backdrop-blur-xl border border-white/10 rounded-xl hover:border-indigo-500/30 transition-all duration-300 bg-gradient-to-br from-indigo-500/5 to-indigo-600/5 hover:from-indigo-500/10 hover:to-indigo-600/10 group"
+            >
+              <div className="text-center">
+                <div className="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-indigo-500/30 transition-colors">
+                  <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white mb-1">Update Component</h3>
+                <p className="text-xs text-gray-400">Update credential data</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setShowSubjectCreateModal(true)}
+              className="p-4 backdrop-blur-xl border border-white/10 rounded-xl hover:border-teal-500/30 transition-all duration-300 bg-gradient-to-br from-teal-500/5 to-teal-600/5 hover:from-teal-500/10 hover:to-teal-600/10 group"
+            >
+              <div className="text-center">
+                <div className="w-10 h-10 bg-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-teal-500/30 transition-colors">
+                  <svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white mb-1">Create Subject</h3>
+                <p className="text-xs text-gray-400">Add new subject</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setShowComponentModal(true)}
+              className="p-4 backdrop-blur-xl border border-white/10 rounded-xl hover:border-cyan-500/30 transition-all duration-300 bg-gradient-to-br from-cyan-500/5 to-cyan-600/5 hover:from-cyan-500/10 hover:to-cyan-600/10 group"
+            >
+              <div className="text-center">
+                <div className="w-10 h-10 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-cyan-500/30 transition-colors">
+                  <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white mb-1">Register Component</h3>
+                <p className="text-xs text-gray-400">Add component type</p>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Modals */}
