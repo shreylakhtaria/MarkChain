@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { ethers } from 'ethers';
 import { GRADING_SSI_ABI } from './contract-abi';
+import { Subject, SubjectDocument } from '../schemas/subject.schema';
+import { Component, ComponentDocument } from '../schemas/component.schema';
 
 @Injectable()
 export class BlockchainService {
@@ -10,7 +14,11 @@ export class BlockchainService {
   private wallet: ethers.Wallet;
   private contract: ethers.Contract;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    @InjectModel(Subject.name) private subjectModel: Model<SubjectDocument>,
+    @InjectModel(Component.name) private componentModel: Model<ComponentDocument>,
+  ) {
     this.initializeBlockchain();
   }
 
@@ -419,14 +427,40 @@ export class BlockchainService {
   /**
    * 6. Create a new subject in the system (Admin only)
    * @param subject - Subject name
-   * @returns Transaction hash
+   * @param createdBy - Admin who created it
+   * @returns Transaction hash, success status, and saved subject
    */
-  async createSubject(subject: string): Promise<string> {
+  async createSubject(subject: string, createdBy?: string) {
     try {
+      // Create on blockchain
       const tx = await this.contract.createSubject(subject);
       await tx.wait();
-      this.logger.log(`Subject created: ${subject}`);
-      return tx.hash;
+      this.logger.log(`Subject created on blockchain: ${subject}`);
+      
+      // Save to MongoDB
+      const newSubject = new this.subjectModel({
+        subjectName: subject,
+        blockchainHash: tx.hash,
+        createdBy: createdBy || 'admin',
+        isActive: true,
+      });
+      const savedSubject = await newSubject.save();
+      this.logger.log(`Subject saved to MongoDB: ${subject}`);
+      
+      return { 
+        txHash: tx.hash,
+        success: true,
+        subject: {
+          _id: String(savedSubject._id),
+          subjectName: savedSubject.subjectName,
+          blockchainHash: savedSubject.blockchainHash,
+          isActive: savedSubject.isActive,
+          createdBy: savedSubject.createdBy,
+          description: savedSubject.description,
+          createdAt: savedSubject.createdAt.toISOString(),
+          updatedAt: savedSubject.updatedAt.toISOString(),
+        }
+      };
     } catch (error) {
       this.logger.error(`Failed to create subject: ${error.message}`);
       throw error;
@@ -436,17 +470,102 @@ export class BlockchainService {
   /**
    * 7. Register a component for a subject (Admin only)
    * @param subject - Subject name
-   * @param component - Component name (e.g., "Midterm", "Final")
-   * @returns Transaction hash
+   * @param component - Component name (e.g., "Midterm", "Assignments")
+   * @param createdBy - Admin who created it
+   * @param weightage - Optional weightage for component
+   * @param maxMarks - Optional max marks
+   * @returns Transaction hash, success status, and saved component
    */
-  async registerComponent(subject: string, component: string): Promise<string> {
+  async registerComponent(
+    subject: string, 
+    component: string, 
+    createdBy?: string,
+    weightage?: number,
+    maxMarks?: number
+  ) {
     try {
+      // Register on blockchain
       const tx = await this.contract.registerComponent(subject, component);
       await tx.wait();
-      this.logger.log(`Component '${component}' registered for subject: ${subject}`);
-      return tx.hash;
+      this.logger.log(`Component '${component}' registered on blockchain for subject: ${subject}`);
+      
+      // Save to MongoDB
+      const newComponent = new this.componentModel({
+        componentName: component,
+        subjectName: subject,
+        blockchainHash: tx.hash,
+        createdBy: createdBy || 'admin',
+        weightage: weightage,
+        maxMarks: maxMarks,
+        isActive: true,
+      });
+      const savedComponent = await newComponent.save();
+      this.logger.log(`Component saved to MongoDB: ${component}`);
+      
+      return { 
+        txHash: tx.hash,
+        success: true,
+        component: {
+          _id: String(savedComponent._id),
+          componentName: savedComponent.componentName,
+          subjectName: savedComponent.subjectName,
+          blockchainHash: savedComponent.blockchainHash,
+          isActive: savedComponent.isActive,
+          createdBy: savedComponent.createdBy,
+          weightage: savedComponent.weightage,
+          maxMarks: savedComponent.maxMarks,
+          createdAt: savedComponent.createdAt.toISOString(),
+          updatedAt: savedComponent.updatedAt.toISOString(),
+        }
+      };
     } catch (error) {
       this.logger.error(`Failed to register component: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all subjects from MongoDB
+   */
+  async getAllSubjects() {
+    try {
+      const subjects = await this.subjectModel.find({ isActive: true }).exec();
+      return subjects.map(subject => ({
+        _id: String(subject._id),
+        subjectName: subject.subjectName,
+        blockchainHash: subject.blockchainHash,
+        isActive: subject.isActive,
+        createdBy: subject.createdBy,
+        description: subject.description,
+        createdAt: subject.createdAt.toISOString(),
+        updatedAt: subject.updatedAt.toISOString(),
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to get subjects: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get components for a subject from MongoDB
+   */
+  async getSubjectComponents(subjectName: string) {
+    try {
+      const components = await this.componentModel.find({ subjectName, isActive: true }).exec();
+      return components.map(component => ({
+        _id: String(component._id),
+        componentName: component.componentName,
+        subjectName: component.subjectName,
+        blockchainHash: component.blockchainHash,
+        isActive: component.isActive,
+        createdBy: component.createdBy,
+        weightage: component.weightage,
+        maxMarks: component.maxMarks,
+        createdAt: component.createdAt.toISOString(),
+        updatedAt: component.updatedAt.toISOString(),
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to get components: ${error.message}`);
       throw error;
     }
   }

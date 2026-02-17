@@ -204,3 +204,112 @@ export class VerifyCredentialInput {
   @Field()
   subject: string;
 }
+
+// NEW TYPES FOR WEEK 1 APIs
+@ObjectType()
+export class SubjectResponse {
+  @Field()
+  _id: string;
+
+  @Field()
+  subjectName: string;
+
+  @Field()
+  blockchainHash: string;
+
+  @Field()
+  isActive: boolean;
+
+  @Field({ nullable: true })
+  createdBy?: string;
+
+  @Field({ nullable: true })
+  description?: string;
+
+  @Field()
+  createdAt: string;
+
+  @Field()
+  updatedAt: string;
+}
+
+@ObjectType()
+export class ComponentResponse {
+  @Field()
+  _id: string;
+
+  @Field()
+  componentName: string;
+
+  @Field()
+  subjectName: string;
+
+  @Field()
+  blockchainHash: string;
+
+  @Field()
+  isActive: boolean;
+
+  @Field({ nullable: true })
+  createdBy?: string;
+
+  @Field({ nullable: true })
+  weightage?: number;
+
+  @Field({ nullable: true })
+  maxMarks?: number;
+
+  @Field()
+  createdAt: string;
+
+  @Field()
+  updatedAt: string;
+}
+
+@InputType()
+export class CreateSubjectInput {
+  @Field()
+  subjectName: string;
+
+  @Field({ nullable: true })
+  description?: string;
+}
+
+@InputType()
+export class RegisterComponentInput {
+  @Field()
+  subjectName: string;
+
+  @Field()
+  componentName: string;
+
+  @Field({ nullable: true })
+  weightage?: number;
+
+  @Field({ nullable: true })
+  maxMarks?: number;
+}
+
+@ObjectType()
+export class SubjectWithComponentsResponse {
+  @Field()
+  txHash: string;
+
+  @Field()
+  success: boolean;
+
+  @Field(() => SubjectResponse)
+  subject: SubjectResponse;
+}
+
+@ObjectType()
+export class ComponentWithTxResponse {
+  @Field()
+  txHash: string;
+
+  @Field()
+  success: boolean;
+
+  @Field(() => ComponentResponse)
+  component: ComponentResponse;
+}

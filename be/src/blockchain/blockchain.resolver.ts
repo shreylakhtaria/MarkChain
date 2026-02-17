@@ -20,6 +20,12 @@ import {
   LinkWalletInput,
   RegisterDIDInput,
   VerifyCredentialInput,
+  SubjectResponse,
+  ComponentResponse,
+  CreateSubjectInput,
+  RegisterComponentInput,
+  SubjectWithComponentsResponse,
+  ComponentWithTxResponse,
 } from './blockchain.types';
 
 @Resolver()
@@ -455,6 +461,78 @@ export class BlockchainResolver {
       return await this.ipfsService.testConnection();
     } catch (error) {
       return false;
+    }
+  }
+
+  // Week 1 Core Blockchain APIs
+  @UseGuards(JwtAuthGuard)
+  @Mutation(() => SubjectWithComponentsResponse)
+  async createSubject(
+    @Args('input') input: CreateSubjectInput,
+    @Context() context,
+  ): Promise<any> {
+    try {
+      const currentUser = context.req.user;
+      if (currentUser.role !== 'ADMIN') {
+        throw new Error('Only admins can create subjects');
+      }
+
+      const result = await this.blockchainService.createSubject(
+        input.subjectName,
+        currentUser.walletAddress || 'admin'
+      );
+
+      return result;
+    } catch (error) {
+      throw new Error(`Failed to create subject: ${error.message}`);
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Mutation(() => ComponentWithTxResponse)
+  async registerComponent(
+    @Args('input') input: RegisterComponentInput,
+    @Context() context,
+  ): Promise<any> {
+    try {
+      const currentUser = context.req.user;
+      if (currentUser.role !== 'ADMIN') {
+        throw new Error('Only admins can register components');
+      }
+
+      const result = await this.blockchainService.registerComponent(
+        input.subjectName,
+        input.componentName,
+        currentUser.walletAddress || 'admin',
+        input.weightage,
+        input.maxMarks
+      );
+
+      return result;
+    } catch (error) {
+      throw new Error(`Failed to register component: ${error.message}`);
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Query(() => [SubjectResponse])
+  async getAllSubjects(): Promise<any> {
+    try {
+      return await this.blockchainService.getAllSubjects();
+    } catch (error) {
+      throw new Error(`Failed to get subjects: ${error.message}`);
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Query(() => [ComponentResponse])
+  async getSubjectComponents(
+    @Args('subjectName') subjectName: string,
+  ): Promise<any> {
+    try {
+      return await this.blockchainService.getSubjectComponents(subjectName);
+    } catch (error) {
+      throw new Error(`Failed to get components: ${error.message}`);
     }
   }
 }
