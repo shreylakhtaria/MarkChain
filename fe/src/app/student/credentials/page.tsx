@@ -17,11 +17,15 @@ import {
   useStudentCredentials
 } from "@/hooks/useBlockchain";
 import {
-  FiUser, 
-  FiAward, 
-  FiCalendar, 
-  FiGlobe, 
-  FiLink, 
+  useGetMyCredential,
+  useIsCredentialValid
+} from "@/hooks/useCredentialManagement";
+import {
+  FiUser,
+  FiAward,
+  FiCalendar,
+  FiGlobe,
+  FiLink,
   FiShield,
   FiRefreshCw,
   FiDownload,
@@ -29,7 +33,7 @@ import {
   FiWifi,
   FiWifiOff
 } from "react-icons/fi";
-import CredentialModal from "@/components/CredentialModal";interface CredentialCardProps {
+import CredentialModal from "@/components/CredentialModal"; interface CredentialCardProps {
   credential: {
     ipfsHash: string;
     issuer: string;
@@ -65,7 +69,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({ credential, onView, onD
           {credential.grade}
         </div>
       </div>
-      
+
       <div className="space-y-2 mb-4">
         <div className="flex items-center text-gray-300 text-sm">
           <FiShield className="mr-2" />
@@ -80,7 +84,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({ credential, onView, onD
           TX: {credential.blockchainTxHash.slice(0, 20)}...
         </div>
       </div>
-      
+
       <div className="flex space-x-2">
         <button
           onClick={onView}
@@ -117,7 +121,7 @@ export default function StudentCredentials() {
       setSelectedSubject(subjectParam);
     }
   }, [searchParams]);
-  
+
   // Blockchain hooks
   const { credentials, loading: credentialsLoading, error: credentialsError, refetch } = useStudentCredentials();
   const { data: subjectCredential } = useGetMySubjectCredential(selectedSubject, { skip: !selectedSubject });
@@ -127,26 +131,36 @@ export default function StudentCredentials() {
   const { data: networkInfo } = useGetBlockchainNetworkInfo();
   const { data: ipfsStatus } = useTestIPFSConnection();
 
+  // New credential management hooks
+  const { data: myCredentialData, loading: myCredentialLoading, error: myCredentialError } = useGetMyCredential(
+    selectedSubject,
+    { skip: !selectedSubject }
+  );
+  const { data: validityData, loading: validityLoading } = useIsCredentialValid(
+    { studentAddress: user?.walletAddress || '', subject: selectedSubject },
+    { skip: !selectedSubject || !user?.walletAddress }
+  );
+
   const handleLinkWallet = async () => {
     if (!walletAddress) return;
-    
+
     try {
       // Debug: Check if we have a valid token
       const token = localStorage.getItem('accessToken');
       console.log('Token exists:', !!token);
       console.log('Token preview:', token ? token.substring(0, 50) + '...' : 'No token');
-      
+
       // Debug: Check user info
       console.log('Current user:', user);
-      
+
       const result = await linkWallet({
         variables: {
           input: { walletAddress }
         }
       });
-      
+
       console.log('Link wallet result:', result);
-      
+
       if (result.data?.linkWalletAddress.success) {
         alert("Wallet linked successfully!");
         setWalletAddress("");
@@ -161,14 +175,14 @@ export default function StudentCredentials() {
 
   const handleRegisterDID = async () => {
     if (!didAddress) return;
-    
+
     try {
       const result = await registerDID({
         variables: {
           input: { did: didAddress }
         }
       });
-      
+
       if (result.data?.registerUserDID.success) {
         alert("DID registered successfully!");
         setDidAddress("");
@@ -197,7 +211,7 @@ export default function StudentCredentials() {
       blockchainTx: credential.blockchainTxHash,
       ipfsHash: credential.ipfsHash
     };
-    
+
     const blob = new Blob([JSON.stringify(credentialData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -221,7 +235,7 @@ export default function StudentCredentials() {
     <ProtectedRoute>
       <div className="min-h-screen" style={{ backgroundColor: '#0b0b12' }}>
         <DynamicNavbar />
-        
+
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-white mb-2">My Blockchain Credentials</h1>
@@ -312,7 +326,7 @@ export default function StudentCredentials() {
           {!isSetupComplete && (
             <div className="bg-yellow-900/20 border border-yellow-600/50 rounded-xl p-6 mb-8">
               <h3 className="text-lg font-semibold text-yellow-400 mb-4">Complete Your Blockchain Setup</h3>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Link Wallet */}
                 <div>
@@ -381,7 +395,7 @@ export default function StudentCredentials() {
                 Clear
               </button>
             </div>
-            
+
             {selectedSubject && subjectCredential?.getMySubjectCredential && (
               <div className="mt-4">
                 <CredentialCard
@@ -390,6 +404,81 @@ export default function StudentCredentials() {
                   onDownload={() => handleDownloadCredential(subjectCredential.getMySubjectCredential)}
                 />
               </div>
+            )}
+
+            {/* Enhanced Credential Details from New API */}
+            {selectedSubject && myCredentialData?.getMyCredential && (
+              <div className="mt-6 bg-gray-700/50 rounded-xl p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-lg font-semibold text-white">Detailed Credential Info</h4>
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${validityData?.isCredentialValid
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                      : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}>
+                    {validityLoading ? 'Checking...' : validityData?.isCredentialValid ? '✓ Valid' : '✗ Invalid'}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gray-600/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-400 mb-1">Version</div>
+                    <div className="text-white font-semibold">{myCredentialData.getMyCredential.version}</div>
+                  </div>
+                  <div className="bg-gray-600/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-400 mb-1">Components</div>
+                    <div className="text-white font-semibold">{myCredentialData.getMyCredential.totalComponents}</div>
+                  </div>
+                  <div className="bg-gray-600/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-400 mb-1">Created</div>
+                    <div className="text-white font-semibold text-sm">
+                      {new Date(myCredentialData.getMyCredential.createdAt * 1000).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="bg-gray-600/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-400 mb-1">Expires</div>
+                    <div className={`font-semibold text-sm ${myCredentialData.getMyCredential.isExpired ? 'text-red-400' : 'text-green-400'
+                      }`}>
+                      {new Date(myCredentialData.getMyCredential.expiresAt * 1000).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-600/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-400 mb-1">IPFS Hash</div>
+                    <div className="text-white font-mono text-xs break-all">{myCredentialData.getMyCredential.ipfsHash}</div>
+                  </div>
+                  <div className="bg-gray-600/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-400 mb-1">Last Updated</div>
+                    <div className="text-white font-semibold">
+                      {new Date(myCredentialData.getMyCredential.lastUpdatedAt * 1000).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-4">
+                  <div className={`flex items-center text-sm ${myCredentialData.getMyCredential.revoked ? 'text-red-400' : 'text-green-400'
+                    }`}>
+                    <span className={`w-2 h-2 rounded-full mr-2 ${myCredentialData.getMyCredential.revoked ? 'bg-red-400' : 'bg-green-400'
+                      }`}></span>
+                    {myCredentialData.getMyCredential.revoked ? 'Revoked' : 'Active'}
+                  </div>
+                  <div className={`flex items-center text-sm ${myCredentialData.getMyCredential.isExpired ? 'text-red-400' : 'text-green-400'
+                    }`}>
+                    <span className={`w-2 h-2 rounded-full mr-2 ${myCredentialData.getMyCredential.isExpired ? 'bg-red-400' : 'bg-green-400'
+                      }`}></span>
+                    {myCredentialData.getMyCredential.isExpired ? 'Expired' : 'Not Expired'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedSubject && myCredentialLoading && (
+              <div className="mt-4 text-center text-gray-400 py-4">Loading credential details...</div>
+            )}
+
+            {selectedSubject && myCredentialError && (
+              <div className="mt-4 text-center text-red-400 py-4">Error: {myCredentialError.message}</div>
             )}
           </div>
 
