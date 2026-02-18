@@ -282,6 +282,12 @@ export class BlockchainService {
     validityPeriod: number
   ): Promise<string> {
     try {
+      if (typeof this.contract.createCredential !== 'function') {
+        throw new Error(
+          'createCredential does not exist on the deployed contract. ' +
+          'You may need to redeploy the new GradingSSI contract and update CONTRACT_ADDRESS in .env'
+        );
+      }
       const tx = await this.contract.createCredential(
         studentAddress,
         subject,
@@ -432,8 +438,31 @@ export class BlockchainService {
    */
   async createSubject(subject: string, createdBy?: string) {
     try {
+      // --- DIAGNOSTICS ---
+      // 1. Verify ABI has createSubject
+      const fn = this.contract.interface.getFunction('createSubject');
+      this.logger.log(`ABI function found: ${fn ? fn.format() : 'NOT FOUND IN ABI'}`);
+
+      // 2. Check wallet balance (gas)
+      const balance = await this.provider.getBalance(this.wallet.address);
+      this.logger.log(`Wallet balance: ${ethers.formatEther(balance)} ETH`);
+      if (balance === 0n) {
+        throw new Error('Wallet has 0 ETH — cannot pay for gas. Fund the wallet on Sepolia first.');
+      }
+
+      // 3. Verify contract is deployed at address
+      const code = await this.provider.getCode(this.contract.target.toString());
+      this.logger.log(`Contract bytecode length at address: ${code.length}`);
+      if (code === '0x') {
+        throw new Error(`No contract deployed at ${this.contract.target}. Update CONTRACT_ADDRESS in .env`);
+      }
+      // --- END DIAGNOSTICS ---
+
       // Create on blockchain
       const tx = await this.contract.createSubject(subject);
+      if (!tx) {
+        throw new Error('Transaction returned undefined — contract may not match the ABI');
+      }
       await tx.wait();
       this.logger.log(`Subject created on blockchain: ${subject}`);
       
@@ -484,8 +513,19 @@ export class BlockchainService {
     maxMarks?: number
   ) {
     try {
+      // Guard: check the function exists on the deployed contract
+      if (typeof this.contract.registerComponent !== 'function') {
+        throw new Error(
+          'registerComponent does not exist on the deployed contract. ' +
+          'You may need to redeploy the new GradingSSI contract and update CONTRACT_ADDRESS in .env'
+        );
+      }
+
       // Register on blockchain
       const tx = await this.contract.registerComponent(subject, component);
+      if (!tx) {
+        throw new Error('Transaction returned undefined — contract may not match the ABI');
+      }
       await tx.wait();
       this.logger.log(`Component '${component}' registered on blockchain for subject: ${subject}`);
       

@@ -142,6 +142,42 @@ type TransactionResponse {
   error: String
 }
 
+type SubjectResponse {
+  _id: String!
+  subjectName: String!
+  blockchainHash: String!
+  isActive: Boolean!
+  createdBy: String
+  description: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ComponentResponse {
+  _id: String!
+  componentName: String!
+  subjectName: String!
+  blockchainHash: String!
+  isActive: Boolean!
+  createdBy: String
+  weightage: Float
+  maxMarks: Float
+  createdAt: String!
+  updatedAt: String!
+}
+
+type SubjectWithComponentsResponse {
+  txHash: String!
+  success: Boolean!
+  subject: SubjectResponse!
+}
+
+type ComponentWithTxResponse {
+  txHash: String!
+  success: Boolean!
+  component: ComponentResponse!
+}
+
 type AssignBlockchainRoleResponse {
   success: Boolean!
   message: String!
@@ -294,6 +330,8 @@ type Query {
   verifyBlockchainCredential(input: VerifyCredentialInput!): BlockchainCredential
   getBlockchainNetworkInfo: NetworkInfo!
   testIPFSConnection: Boolean!
+  getAllSubjects: [SubjectResponse!]!
+  getSubjectComponents(subjectName: String!): [ComponentResponse!]!
   getAllTeacherSubjects: [TeacherSubjectDto!]!
   getTeacherSubjectsByTeacher(teacherWalletAddress: String!): [TeacherSubjectDto!]!
   getAllExamSchedules: [ExamScheduleDto!]!
@@ -332,6 +370,8 @@ type Mutation {
   linkWalletAddress(input: LinkWalletInput!): TransactionResponse!
   registerUserDID(input: RegisterDIDInput!): TransactionResponse!
   issueBlockchainCredential(input: IssueBlockchainCredentialInput!): TransactionResponse!
+  createSubject(input: CreateSubjectInput!): SubjectWithComponentsResponse!
+  registerComponent(input: RegisterComponentInput!): ComponentWithTxResponse!
   createTeacherSubject(input: CreateTeacherSubjectInput!): TeacherSubjectDto!
   updateTeacherSubject(input: UpdateTeacherSubjectInput!): TeacherSubjectDto!
   deleteTeacherSubject(subjectId: String!): AssignBlockchainRoleResponse!
@@ -409,6 +449,18 @@ input IssueBlockchainCredentialInput {
   studentAddress: String!
   subject: String!
   credentialData: String!
+}
+
+input CreateSubjectInput {
+  subjectName: String!
+  description: String
+}
+
+input RegisterComponentInput {
+  subjectName: String!
+  componentName: String!
+  weightage: Float
+  maxMarks: Float
 }
 
 input CreateTeacherSubjectInput {
