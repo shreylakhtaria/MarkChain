@@ -15,7 +15,8 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
     bytes32 public constant BACKEND_ROLE = keccak256("BACKEND_ROLE");
 
     /// @dev Student DID => Subject => Credential (current version with component history)
-    mapping(bytes32 => mapping(string => SubjectCredential)) private subjectCredentials;
+    mapping(bytes32 => mapping(string => SubjectCredential))
+        private subjectCredentials;
 
     /// @dev Address => DID hash
     mapping(address => bytes32) public didRegistry;
@@ -39,37 +40,61 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
     mapping(string => bool) public subjectExists;
 
     struct SubjectCredential {
-        string currentIPFSHash;      // Latest version of the complete VC
-        address lastUpdatedBy;       // Last issuer who updated
-        uint256 createdAt;           // When credential was first created
-        uint256 lastUpdatedAt;       // Last update timestamp
-        uint256 expiresAt;           // Expiration (0 = no expiration)
-        bool revoked;                // Revocation status
-        uint256 totalComponents;     // Total components graded
-        uint256 version;             // Version number (increments on update)
-        ComponentUpdate[] updateHistory;  // History of all component updates
+        string currentIPFSHash; // Latest version of the complete VC
+        address lastUpdatedBy; // Last issuer who updated
+        uint256 createdAt; // When credential was first created
+        uint256 lastUpdatedAt; // Last update timestamp
+        uint256 expiresAt; // Expiration (0 = no expiration)
+        bool revoked; // Revocation status
+        uint256 totalComponents; // Total components graded
+        uint256 version; // Version number (increments on update)
+        ComponentUpdate[] updateHistory; // History of all component updates
     }
 
     struct ComponentUpdate {
-        string componentName;        // e.g., "Midterm", "Project", "Quiz1"
-        string ipfsHash;            // IPFS hash after this component was added
-        address updatedBy;          // Who added this component
-        uint256 timestamp;          // When it was added
-        uint256 credentialVersion;  // Version of credential at this update
+        string componentName; // e.g., "Midterm", "Project", "Quiz1"
+        string ipfsHash; // IPFS hash after this component was added
+        address updatedBy; // Who added this component
+        uint256 timestamp; // When it was added
+        uint256 credentialVersion; // Version of credential at this update
     }
 
     /// Events
     event DIDRegistered(address indexed user, bytes32 indexed did);
-    event RoleAssigned(address indexed user, bytes32 indexed role, address indexed admin);
-    event RoleRevoked(address indexed user, bytes32 indexed role, address indexed admin);
-    
+    event RoleAssigned(
+        address indexed user,
+        bytes32 indexed role,
+        address indexed admin
+    );
+    event RoleRevoked(
+        address indexed user,
+        bytes32 indexed role,
+        address indexed admin
+    );
+
     event SubjectCreated(string subject, address indexed admin);
-    event SubjectAssigned(address indexed teacher, string subject, address indexed admin);
-    event SubjectRemoved(address indexed teacher, string subject, address indexed admin);
-    
-    event ComponentRegistered(string subject, string component, address indexed admin);
-    event ComponentRemoved(string subject, string component, address indexed admin);
-    
+    event SubjectAssigned(
+        address indexed teacher,
+        string subject,
+        address indexed admin
+    );
+    event SubjectRemoved(
+        address indexed teacher,
+        string subject,
+        address indexed admin
+    );
+
+    event ComponentRegistered(
+        string subject,
+        string component,
+        address indexed admin
+    );
+    event ComponentRemoved(
+        string subject,
+        string component,
+        address indexed admin
+    );
+
     event CredentialCreated(
         bytes32 indexed studentDID,
         address indexed student,
@@ -78,7 +103,7 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
         address indexed issuer,
         uint256 expiresAt
     );
-    
+
     event ComponentGraded(
         bytes32 indexed studentDID,
         address indexed student,
@@ -88,13 +113,13 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
         address indexed gradedBy,
         uint256 version
     );
-    
+
     event CredentialRevoked(
         bytes32 indexed studentDID,
         string subject,
         address indexed revokedBy
     );
-    
+
     event CredentialExpired(bytes32 indexed studentDID, string subject);
 
     constructor() {
@@ -123,48 +148,66 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
     /// @notice Register a DID for the caller (called by backend after did:ethr creation)
     /// @param did The decentralized identifier string
     function registerDID(string calldata did) external {
-        require(didRegistry[msg.sender] == bytes32(0), "DID already registered");
+        require(
+            didRegistry[msg.sender] == bytes32(0),
+            "DID already registered"
+        );
         require(bytes(did).length > 0, "DID cannot be empty");
-        
+
         bytes32 hashedDID = keccak256(abi.encodePacked(did));
-        
+
         // Check for hash collision
-        require(didToAddress[hashedDID] == address(0), "DID hash collision detected");
-        
+        require(
+            didToAddress[hashedDID] == address(0),
+            "DID hash collision detected"
+        );
+
         didRegistry[msg.sender] = hashedDID;
         didToAddress[hashedDID] = msg.sender;
-        
+
         emit DIDRegistered(msg.sender, hashedDID);
     }
 
     /// @notice Backend can register DID on behalf of user
     /// @param user The user's address
     /// @param did The DID string
-    function registerDIDForUser(address user, string calldata did) external onlyBackend {
+    function registerDIDForUser(
+        address user,
+        string calldata did
+    ) external onlyBackend {
         require(didRegistry[user] == bytes32(0), "DID already registered");
         require(bytes(did).length > 0, "DID cannot be empty");
         require(user != address(0), "Invalid address");
-        
+
         bytes32 hashedDID = keccak256(abi.encodePacked(did));
-        require(didToAddress[hashedDID] == address(0), "DID hash collision detected");
-        
+        require(
+            didToAddress[hashedDID] == address(0),
+            "DID hash collision detected"
+        );
+
         didRegistry[user] = hashedDID;
         didToAddress[hashedDID] = user;
-        
+
         emit DIDRegistered(user, hashedDID);
     }
 
     // --- Role Management ---
 
     /// @notice Assign a role to a user
-    function assignRole(address user, bytes32 role) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function assignRole(
+        address user,
+        bytes32 role
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(user != address(0), "Invalid address");
         _grantRole(role, user);
         emit RoleAssigned(user, role, msg.sender);
     }
 
     /// @notice Revoke a role from a user
-    function revokeRole(bytes32 role, address user) public override onlyRole(DEFAULT_ADMIN_ROLE) {
+    function revokeRole(
+        bytes32 role,
+        address user
+    ) public override onlyRole(DEFAULT_ADMIN_ROLE) {
         super.revokeRole(role, user);
         emit RoleRevoked(user, role, msg.sender);
     }
@@ -173,10 +216,12 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
 
     /// @notice Create a new subject
     /// @param subject The subject identifier
-    function createSubject(string calldata subject) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function createSubject(
+        string calldata subject
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(bytes(subject).length > 0, "Subject cannot be empty");
         require(!subjectExists[subject], "Subject already exists");
-        
+
         subjectExists[subject] = true;
         emit SubjectCreated(subject, msg.sender);
     }
@@ -184,60 +229,66 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
     /// @notice Register a component for a subject
     /// @param subject The subject identifier
     /// @param component The component name (e.g., "Midterm", "Project1")
-    function registerComponent(string calldata subject, string calldata component) 
-        external 
-        onlyRole(DEFAULT_ADMIN_ROLE) 
-    {
+    function registerComponent(
+        string calldata subject,
+        string calldata component
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(subjectExists[subject], "Subject does not exist");
         require(bytes(component).length > 0, "Component cannot be empty");
-        require(!validComponents[subject][component], "Component already registered");
-        
+        require(
+            !validComponents[subject][component],
+            "Component already registered"
+        );
+
         validComponents[subject][component] = true;
         subjectComponentCount[subject]++;
-        
+
         emit ComponentRegistered(subject, component, msg.sender);
     }
 
     /// @notice Remove a component from a subject
     /// @param subject The subject identifier
     /// @param component The component name
-    function removeComponent(string calldata subject, string calldata component) 
-        external 
-        onlyRole(DEFAULT_ADMIN_ROLE) 
-    {
-        require(validComponents[subject][component], "Component not registered");
-        
+    function removeComponent(
+        string calldata subject,
+        string calldata component
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(
+            validComponents[subject][component],
+            "Component not registered"
+        );
+
         validComponents[subject][component] = false;
         subjectComponentCount[subject]--;
-        
+
         emit ComponentRemoved(subject, component, msg.sender);
     }
 
     /// @notice Assign a subject to a teacher
-    function assignSubjectToTeacher(address teacher, string calldata subject) 
-        external 
-        onlyRole(DEFAULT_ADMIN_ROLE) 
-    {
+    function assignSubjectToTeacher(
+        address teacher,
+        string calldata subject
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(hasRole(TEACHER_ROLE, teacher), "Not a teacher");
         require(subjectExists[subject], "Subject does not exist");
         require(!teacherSubjects[teacher][subject], "Subject already assigned");
-        
+
         teacherSubjects[teacher][subject] = true;
         teacherSubjectCount[teacher]++;
-        
+
         emit SubjectAssigned(teacher, subject, msg.sender);
     }
 
     /// @notice Remove a subject from a teacher
-    function removeSubjectFromTeacher(address teacher, string calldata subject) 
-        external 
-        onlyRole(DEFAULT_ADMIN_ROLE) 
-    {
+    function removeSubjectFromTeacher(
+        address teacher,
+        string calldata subject
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(teacherSubjects[teacher][subject], "Subject not assigned");
-        
+
         teacherSubjects[teacher][subject] = false;
         teacherSubjectCount[teacher]--;
-        
+
         emit SubjectRemoved(teacher, subject, msg.sender);
     }
 
@@ -259,12 +310,16 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
         require(subjectExists[subject], "Subject does not exist");
         require(bytes(ipfsHash).length > 0, "IPFS hash cannot be empty");
         require(_isValidIPFSHash(ipfsHash), "Invalid IPFS hash format");
-        
-        SubjectCredential storage credential = subjectCredentials[studentDID][subject];
+
+        SubjectCredential storage credential = subjectCredentials[studentDID][
+            subject
+        ];
         require(credential.createdAt == 0, "Credential already exists");
-        
-        uint256 expiresAt = validityPeriod > 0 ? block.timestamp + validityPeriod : 0;
-        
+
+        uint256 expiresAt = validityPeriod > 0
+            ? block.timestamp + validityPeriod
+            : 0;
+
         credential.currentIPFSHash = ipfsHash;
         credential.lastUpdatedBy = msg.sender;
         credential.createdAt = block.timestamp;
@@ -273,8 +328,15 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
         credential.revoked = false;
         credential.totalComponents = 0;
         credential.version = 0;
-        
-        emit CredentialCreated(studentDID, student, subject, ipfsHash, msg.sender, expiresAt);
+
+        emit CredentialCreated(
+            studentDID,
+            student,
+            subject,
+            ipfsHash,
+            msg.sender,
+            expiresAt
+        );
     }
 
     // --- Component Grading (Updates Existing Credential) ---
@@ -293,38 +355,55 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
         bytes32 studentDID = didRegistry[student];
         require(studentDID != bytes32(0), "Student DID not registered");
         require(subjectExists[subject], "Subject does not exist");
-        require(validComponents[subject][component], "Component not registered for subject");
+        require(
+            validComponents[subject][component],
+            "Component not registered for subject"
+        );
         require(bytes(newIPFSHash).length > 0, "IPFS hash cannot be empty");
         require(_isValidIPFSHash(newIPFSHash), "Invalid IPFS hash format");
-        
-        SubjectCredential storage credential = subjectCredentials[studentDID][subject];
+
+        SubjectCredential storage credential = subjectCredentials[studentDID][
+            subject
+        ];
         require(credential.createdAt > 0, "Credential does not exist");
         require(!credential.revoked, "Credential is revoked");
-        
+
         // Check expiration
-        if (credential.expiresAt > 0 && block.timestamp > credential.expiresAt) {
+        if (
+            credential.expiresAt > 0 && block.timestamp > credential.expiresAt
+        ) {
             revert("Credential has expired");
         }
-        
+
         // Increment version
         credential.version++;
-        
+
         // Update main credential
         credential.currentIPFSHash = newIPFSHash;
         credential.lastUpdatedBy = msg.sender;
         credential.lastUpdatedAt = block.timestamp;
         credential.totalComponents++;
-        
+
         // Add to update history
-        credential.updateHistory.push(ComponentUpdate({
-            componentName: component,
-            ipfsHash: newIPFSHash,
-            updatedBy: msg.sender,
-            timestamp: block.timestamp,
-            credentialVersion: credential.version
-        }));
-        
-        emit ComponentGraded(studentDID, student, subject, component, newIPFSHash, msg.sender, credential.version);
+        credential.updateHistory.push(
+            ComponentUpdate({
+                componentName: component,
+                ipfsHash: newIPFSHash,
+                updatedBy: msg.sender,
+                timestamp: block.timestamp,
+                credentialVersion: credential.version
+            })
+        );
+
+        emit ComponentGraded(
+            studentDID,
+            student,
+            subject,
+            component,
+            newIPFSHash,
+            msg.sender,
+            credential.version
+        );
     }
 
     /// @notice Batch update credentials for multiple students with same component
@@ -341,65 +420,88 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
         require(students.length == ipfsHashes.length, "Array length mismatch");
         require(students.length > 0, "Empty arrays");
         require(subjectExists[subject], "Subject does not exist");
-        require(validComponents[subject][component], "Component not registered");
-        
+        require(
+            validComponents[subject][component],
+            "Component not registered"
+        );
+
         for (uint256 i = 0; i < students.length; i++) {
             address student = students[i];
             string calldata ipfsHash = ipfsHashes[i];
-            
+
             bytes32 studentDID = didRegistry[student];
             if (studentDID == bytes32(0)) continue; // Skip if no DID
-            
-            SubjectCredential storage credential = subjectCredentials[studentDID][subject];
+
+            SubjectCredential storage credential = subjectCredentials[
+                studentDID
+            ][subject];
             if (credential.createdAt == 0 || credential.revoked) continue; // Skip if no credential or revoked
-            if (credential.expiresAt > 0 && block.timestamp > credential.expiresAt) continue; // Skip if expired
-            
-            if (bytes(ipfsHash).length == 0 || !_isValidIPFSHash(ipfsHash)) continue; // Skip invalid hash
-            
+            if (
+                credential.expiresAt > 0 &&
+                block.timestamp > credential.expiresAt
+            ) continue; // Skip if expired
+
+            if (bytes(ipfsHash).length == 0 || !_isValidIPFSHash(ipfsHash))
+                continue; // Skip invalid hash
+
             credential.version++;
             credential.currentIPFSHash = ipfsHash;
             credential.lastUpdatedBy = msg.sender;
             credential.lastUpdatedAt = block.timestamp;
             credential.totalComponents++;
-            
-            credential.updateHistory.push(ComponentUpdate({
-                componentName: component,
-                ipfsHash: ipfsHash,
-                updatedBy: msg.sender,
-                timestamp: block.timestamp,
-                credentialVersion: credential.version
-            }));
-            
-            emit ComponentGraded(studentDID, student, subject, component, ipfsHash, msg.sender, credential.version);
+
+            credential.updateHistory.push(
+                ComponentUpdate({
+                    componentName: component,
+                    ipfsHash: ipfsHash,
+                    updatedBy: msg.sender,
+                    timestamp: block.timestamp,
+                    credentialVersion: credential.version
+                })
+            );
+
+            emit ComponentGraded(
+                studentDID,
+                student,
+                subject,
+                component,
+                ipfsHash,
+                msg.sender,
+                credential.version
+            );
         }
     }
 
     // --- Credential Revocation ---
 
     /// @notice Revoke a student's credential for a subject
-    function revokeCredential(address student, string calldata subject) 
-        external 
-        onlyRole(DEFAULT_ADMIN_ROLE) 
-    {
+    function revokeCredential(
+        address student,
+        string calldata subject
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         bytes32 studentDID = didRegistry[student];
         require(studentDID != bytes32(0), "Student DID not registered");
-        
-        SubjectCredential storage credential = subjectCredentials[studentDID][subject];
+
+        SubjectCredential storage credential = subjectCredentials[studentDID][
+            subject
+        ];
         require(credential.createdAt > 0, "Credential does not exist");
         require(!credential.revoked, "Credential already revoked");
-        
+
         credential.revoked = true;
-        
+
         emit CredentialRevoked(studentDID, subject, msg.sender);
     }
 
     // --- Credential Access ---
 
     /// @notice Get student's own credential for a subject
-    function getMyCredential(string calldata subject) 
-        external 
-        view 
-        onlyStudent 
+    function getMyCredential(
+        string calldata subject
+    )
+        external
+        view
+        onlyStudent
         returns (
             string memory ipfsHash,
             uint256 version,
@@ -409,13 +511,15 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
             uint256 expiresAt,
             bool revoked,
             bool isExpired
-        ) 
+        )
     {
         bytes32 studentDID = didRegistry[msg.sender];
-        SubjectCredential storage cred = subjectCredentials[studentDID][subject];
-        
+        SubjectCredential storage cred = subjectCredentials[studentDID][
+            subject
+        ];
+
         bool expired = cred.expiresAt > 0 && block.timestamp > cred.expiresAt;
-        
+
         return (
             cred.currentIPFSHash,
             cred.version,
@@ -429,18 +533,18 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
     }
 
     /// @notice Get student's component update history
-    function getMyComponentHistory(string calldata subject) 
-        external 
-        view 
-        onlyStudent 
-        returns (ComponentUpdate[] memory) 
-    {
+    function getMyComponentHistory(
+        string calldata subject
+    ) external view onlyStudent returns (ComponentUpdate[] memory) {
         bytes32 studentDID = didRegistry[msg.sender];
         return subjectCredentials[studentDID][subject].updateHistory;
     }
 
     /// @notice Get student's credential (admin/backend only)
-    function getStudentCredential(address student, string calldata subject)
+    function getStudentCredential(
+        address student,
+        string calldata subject
+    )
         external
         view
         returns (
@@ -455,15 +559,18 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
         )
     {
         require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(BACKEND_ROLE, msg.sender),
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender) ||
+                hasRole(BACKEND_ROLE, msg.sender),
             "Not authorized"
         );
-        
+
         bytes32 studentDID = didRegistry[student];
-        SubjectCredential storage cred = subjectCredentials[studentDID][subject];
-        
+        SubjectCredential storage cred = subjectCredentials[studentDID][
+            subject
+        ];
+
         bool expired = cred.expiresAt > 0 && block.timestamp > cred.expiresAt;
-        
+
         return (
             cred.currentIPFSHash,
             cred.version,
@@ -477,39 +584,44 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
     }
 
     /// @notice Get student's component history (admin/backend only)
-    function getStudentComponentHistory(address student, string calldata subject)
-        external
-        view
-        returns (ComponentUpdate[] memory)
-    {
+    function getStudentComponentHistory(
+        address student,
+        string calldata subject
+    ) external view returns (ComponentUpdate[] memory) {
         require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(BACKEND_ROLE, msg.sender),
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender) ||
+                hasRole(BACKEND_ROLE, msg.sender),
             "Not authorized"
         );
-        
+
         bytes32 studentDID = didRegistry[student];
         return subjectCredentials[studentDID][subject].updateHistory;
     }
 
     /// @notice Check if a credential is valid
-    function isCredentialValid(address student, string calldata subject) 
-        external 
-        view 
-        returns (bool) 
-    {
+    function isCredentialValid(
+        address student,
+        string calldata subject
+    ) external view returns (bool) {
         bytes32 studentDID = didRegistry[student];
         if (studentDID == bytes32(0)) return false;
-        
-        SubjectCredential storage cred = subjectCredentials[studentDID][subject];
+
+        SubjectCredential storage cred = subjectCredentials[studentDID][
+            subject
+        ];
         if (cred.createdAt == 0) return false;
         if (cred.revoked) return false;
-        if (cred.expiresAt > 0 && block.timestamp > cred.expiresAt) return false;
-        
+        if (cred.expiresAt > 0 && block.timestamp > cred.expiresAt)
+            return false;
+
         return true;
     }
 
     /// @notice Get credential statistics
-    function getCredentialStats(address student, string calldata subject)
+    function getCredentialStats(
+        address student,
+        string calldata subject
+    )
         external
         view
         returns (
@@ -521,75 +633,85 @@ contract GradingSSI is AccessControl, Initializable, ReentrancyGuard {
         )
     {
         bytes32 studentDID = didRegistry[student];
-        SubjectCredential storage cred = subjectCredentials[studentDID][subject];
-        
+        SubjectCredential storage cred = subjectCredentials[studentDID][
+            subject
+        ];
+
         exists = cred.createdAt > 0;
-        isValid = exists && !cred.revoked && 
-                  (cred.expiresAt == 0 || block.timestamp <= cred.expiresAt);
+        isValid =
+            exists &&
+            !cred.revoked &&
+            (cred.expiresAt == 0 || block.timestamp <= cred.expiresAt);
         componentsGraded = cred.totalComponents;
         totalComponentsInSubject = subjectComponentCount[subject];
-        
+
         if (totalComponentsInSubject > 0) {
-            completionPercentage = (componentsGraded * 100) / totalComponentsInSubject;
+            completionPercentage =
+                (componentsGraded * 100) /
+                totalComponentsInSubject;
         } else {
             completionPercentage = 0;
         }
-        
-        return (exists, isValid, componentsGraded, totalComponentsInSubject, completionPercentage);
+
+        return (
+            exists,
+            isValid,
+            componentsGraded,
+            totalComponentsInSubject,
+            completionPercentage
+        );
     }
 
     // --- Utility Functions ---
 
     /// @notice Validate IPFS hash format
-    function _isValidIPFSHash(string calldata ipfsHash) internal pure returns (bool) {
+    function _isValidIPFSHash(
+        string calldata ipfsHash
+    ) internal pure returns (bool) {
         bytes memory hashBytes = bytes(ipfsHash);
-        
+
         // IPFS CIDv0: "Qm..." (46 chars)
-        if (hashBytes.length == 46 && hashBytes[0] == 'Q' && hashBytes[1] == 'm') {
+        if (
+            hashBytes.length == 46 && hashBytes[0] == "Q" && hashBytes[1] == "m"
+        ) {
             return true;
         }
-        
+
         // IPFS CIDv1: "b..." (59+ chars)
-        if (hashBytes.length >= 59 && hashBytes[0] == 'b') {
+        if (hashBytes.length >= 59 && hashBytes[0] == "b") {
             return true;
         }
-        
+
         return false;
     }
 
     /// @notice Check if teacher has subject
-    function hasSubject(address teacher, string calldata subject) 
-        external 
-        view 
-        returns (bool) 
-    {
+    function hasSubject(
+        address teacher,
+        string calldata subject
+    ) external view returns (bool) {
         return teacherSubjects[teacher][subject];
     }
 
     /// @notice Check if component is valid for subject
-    function isValidComponent(string calldata subject, string calldata component) 
-        external 
-        view 
-        returns (bool) 
-    {
+    function isValidComponent(
+        string calldata subject,
+        string calldata component
+    ) external view returns (bool) {
         return validComponents[subject][component];
     }
 
     /// @notice Get total subjects assigned to teacher
-    function getTeacherSubjectCount(address teacher) 
-        external 
-        view 
-        returns (uint256) 
-    {
+    function getTeacherSubjectCount(
+        address teacher
+    ) external view returns (uint256) {
         return teacherSubjectCount[teacher];
     }
 
     /// @notice Get total components in a subject
-    function getSubjectComponentCount(string calldata subject) 
-        external 
-        view 
-        returns (uint256) 
-    {
+    function getSubjectComponentCount(
+        string calldata subject
+    ) external view returns (uint256) {
         return subjectComponentCount[subject];
     }
 }

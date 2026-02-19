@@ -434,12 +434,40 @@ export interface UpdateCredentialWithComponentInput {
 }
 
 export interface CreateSubjectInput {
-  subject: string;
+  subjectName: string;
+  description?: string;
 }
 
 export interface RegisterComponentInput {
-  subject: string;
-  component: string;
+  subjectName: string;
+  componentName: string;
+  weightage?: number;
+  maxMarks?: number;
+}
+
+// Subject & Component types (returned by mutations)
+export interface Subject {
+  _id: string;
+  subjectName: string;
+  blockchainHash?: string;
+  isActive: boolean;
+  createdBy: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Component {
+  _id: string;
+  componentName: string;
+  subjectName: string;
+  blockchainHash?: string;
+  isActive: boolean;
+  createdBy: string;
+  weightage?: number;
+  maxMarks?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface GetStudentCredentialInput {
@@ -478,11 +506,19 @@ export interface UpdateCredentialWithComponentResponse {
 }
 
 export interface CreateSubjectResponse {
-  createSubject: CredentialMutationResponse;
+  createSubject: {
+    txHash: string;
+    success: boolean;
+    subject: Subject;
+  };
 }
 
 export interface RegisterComponentResponse {
-  registerComponent: CredentialMutationResponse;
+  registerComponent: {
+    txHash: string;
+    success: boolean;
+    component: Component;
+  };
 }
 
 export interface GetMyCredentialResponse {

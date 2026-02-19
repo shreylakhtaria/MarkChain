@@ -300,6 +300,249 @@ function RevokeCredentialModal({ isOpen, onClose, onRevoke, students, loading }:
   );
 }
 
+// Create Credential Modal
+interface CreateCredentialModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (studentAddress: string, subject: string, ipfsHash: string, validityPeriod: number) => void;
+  students: any[];
+  loading: boolean;
+}
+
+function CreateCredentialModal({ isOpen, onClose, onCreate, students, loading }: CreateCredentialModalProps) {
+  const [studentAddress, setStudentAddress] = useState('');
+  const [subject, setSubject] = useState('');
+  const [ipfsHash, setIpfsHash] = useState('');
+  const [validityPeriod, setValidityPeriod] = useState('31536000');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (studentAddress && subject && ipfsHash && validityPeriod) {
+      onCreate(studentAddress, subject, ipfsHash, parseInt(validityPeriod));
+      setStudentAddress(''); setSubject(''); setIpfsHash(''); setValidityPeriod('31536000');
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-white mb-4">Create Credential</h2>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Student Address *</label>
+            <select value={studentAddress} onChange={e => setStudentAddress(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none">
+              <option value="">Select student</option>
+              {students.map(s => (
+                <option key={s.walletAddress} value={s.walletAddress}>
+                  {s.name || s.studentId || s.walletAddress}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Subject *</label>
+            <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none"
+              placeholder="e.g., Mathematics" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">IPFS Hash *</label>
+            <input type="text" value={ipfsHash} onChange={e => setIpfsHash(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none"
+              placeholder="QmXyZ..." />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Validity Period (seconds)</label>
+            <input type="number" value={validityPeriod} onChange={e => setValidityPeriod(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none"
+              placeholder="31536000 (1 year)" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" disabled={loading || !studentAddress || !subject || !ipfsHash}
+              className="flex-1 px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors">
+              {loading ? 'Creating...' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Update Component Modal
+interface UpdateComponentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdate: (studentAddress: string, subject: string, component: string, ipfsHash: string) => void;
+  students: any[];
+  loading: boolean;
+}
+
+function UpdateComponentModal({ isOpen, onClose, onUpdate, students, loading }: UpdateComponentModalProps) {
+  const [studentAddress, setStudentAddress] = useState('');
+  const [subject, setSubject] = useState('');
+  const [component, setComponent] = useState('');
+  const [ipfsHash, setIpfsHash] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (studentAddress && subject && component && ipfsHash) {
+      onUpdate(studentAddress, subject, component, ipfsHash);
+      setStudentAddress(''); setSubject(''); setComponent(''); setIpfsHash('');
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-white mb-4">Update Credential Component</h2>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Student Address *</label>
+            <select value={studentAddress} onChange={e => setStudentAddress(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-indigo-400 focus:outline-none">
+              <option value="">Select student</option>
+              {students.map(s => (
+                <option key={s.walletAddress} value={s.walletAddress}>
+                  {s.name || s.studentId || s.walletAddress}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Subject *</label>
+            <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-indigo-400 focus:outline-none"
+              placeholder="e.g., Mathematics" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Component *</label>
+            <input type="text" value={component} onChange={e => setComponent(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-indigo-400 focus:outline-none"
+              placeholder="e.g., Midterm" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">IPFS Hash *</label>
+            <input type="text" value={ipfsHash} onChange={e => setIpfsHash(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-indigo-400 focus:outline-none"
+              placeholder="QmAbc..." />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" disabled={loading || !studentAddress || !subject || !component || !ipfsHash}
+              className="flex-1 px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors">
+              {loading ? 'Updating...' : 'Update'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Create Subject Modal
+interface CreateSubjectModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (subject: string) => void;
+  loading: boolean;
+}
+
+function CreateSubjectModal({ isOpen, onClose, onCreate, loading }: CreateSubjectModalProps) {
+  const [subject, setSubject] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (subject) {
+      onCreate(subject);
+      setSubject('');
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-white mb-4">Create Subject</h2>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Subject Name *</label>
+            <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none"
+              placeholder="e.g., Mathematics" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" disabled={loading || !subject}
+              className="flex-1 px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors">
+              {loading ? 'Creating...' : 'Create Subject'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Register Component Modal
+interface RegisterComponentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onRegister: (subject: string, component: string) => void;
+  loading: boolean;
+}
+
+function RegisterComponentModal({ isOpen, onClose, onRegister, loading }: RegisterComponentModalProps) {
+  const [subject, setSubject] = useState('');
+  const [component, setComponent] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (subject && component) {
+      onRegister(subject, component);
+      setSubject(''); setComponent('');
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-white mb-4">Register Component</h2>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Subject *</label>
+            <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+              placeholder="e.g., Mathematics" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Component Name *</label>
+            <input type="text" value={component} onChange={e => setComponent(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+              placeholder="e.g., Midterm" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" disabled={loading || !subject || !component}
+              className="flex-1 px-4 py-2 text-sm bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors">
+              {loading ? 'Registering...' : 'Register'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminBlockchainPage() {
   const { user } = useAuth();
   const [showAssignRoleModal, setShowAssignRoleModal] = useState(false);
@@ -308,6 +551,7 @@ export default function AdminBlockchainPage() {
   const [showCredentialModal, setShowCredentialModal] = useState(false);
   const [showComponentModal, setShowComponentModal] = useState(false);
   const [showSubjectCreateModal, setShowSubjectCreateModal] = useState(false);
+  const [showRegisterComponentModal, setShowRegisterComponentModal] = useState(false);
 
   // Hooks for blockchain operations
   const [assignRole, { loading: assignRoleLoading }] = useAssignBlockchainRole();
@@ -460,41 +704,41 @@ export default function AdminBlockchainPage() {
     }
   };
 
-  const handleCreateSubject = async (subject: string) => {
+  const handleCreateSubject = async (subjectName: string) => {
     try {
       const result = await createSubject({
         variables: {
           input: {
-            subject
+            subjectName
           }
         }
       });
 
       if (result.data?.createSubject.success) {
-        alert(`Successfully created subject: ${subject}`);
+        alert(`Successfully created subject: ${subjectName}`);
       } else {
-        alert(`Failed to create subject: ${result.data?.createSubject.message || 'Unknown error'}`);
+        alert(`Failed to create subject: ${subjectName}`);
       }
     } catch (error: any) {
       alert(`Error: ${error.message}`);
     }
   };
 
-  const handleRegisterComponent = async (subject: string, component: string) => {
+  const handleRegisterComponent = async (subjectName: string, componentName: string) => {
     try {
       const result = await registerComponent({
         variables: {
           input: {
-            subject,
-            component
+            subjectName,
+            componentName
           }
         }
       });
 
       if (result.data?.registerComponent.success) {
-        alert(`Successfully registered component ${component} for ${subject}`);
+        alert(`Successfully registered component ${componentName} for ${subjectName}`);
       } else {
-        alert(`Failed to register component: ${result.data?.registerComponent.message || 'Unknown error'}`);
+        alert(`Failed to register component: ${componentName}`);
       }
     } catch (error: any) {
       alert(`Error: ${error.message}`);
@@ -719,7 +963,7 @@ export default function AdminBlockchainPage() {
             </button>
 
             <button
-              onClick={() => setShowComponentModal(true)}
+              onClick={() => setShowRegisterComponentModal(true)}
               className="p-4 backdrop-blur-xl border border-white/10 rounded-xl hover:border-cyan-500/30 transition-all duration-300 bg-gradient-to-br from-cyan-500/5 to-cyan-600/5 hover:from-cyan-500/10 hover:to-cyan-600/10 group"
             >
               <div className="text-center">
@@ -759,6 +1003,36 @@ export default function AdminBlockchainPage() {
           onRevoke={handleRevokeCredential}
           students={students}
           loading={revokeCredentialLoading}
+        />
+
+        <CreateCredentialModal
+          isOpen={showCredentialModal}
+          onClose={() => setShowCredentialModal(false)}
+          onCreate={handleCreateCredential}
+          students={students}
+          loading={createCredentialLoading}
+        />
+
+        <UpdateComponentModal
+          isOpen={showComponentModal}
+          onClose={() => setShowComponentModal(false)}
+          onUpdate={handleUpdateCredentialComponent}
+          students={students}
+          loading={updateComponentLoading}
+        />
+
+        <CreateSubjectModal
+          isOpen={showSubjectCreateModal}
+          onClose={() => setShowSubjectCreateModal(false)}
+          onCreate={handleCreateSubject}
+          loading={createSubjectLoading}
+        />
+
+        <RegisterComponentModal
+          isOpen={showRegisterComponentModal}
+          onClose={() => setShowRegisterComponentModal(false)}
+          onRegister={handleRegisterComponent}
+          loading={registerComponentLoading}
         />
       </div>
     </ProtectedRoute>
