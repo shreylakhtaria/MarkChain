@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { BrowserProvider, Contract } from "ethers";
+import { GRADING_SSI_CONTRACT_ADDRESS, GRADING_SSI_ABI } from "@/config/contractConfig";
 import { useAuth } from "@/hooks/useAuth";
 import DynamicNavbar from "@/components/DynamicNavbar";
 import MagicBento from "@/components/MagicBento";
@@ -450,39 +452,75 @@ function UpdateComponentModal({ isOpen, onClose, onUpdate, students, loading }: 
 interface CreateSubjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (subject: string) => void;
+  onCreate: (subjectName: string, description: string, credits: string) => void;
   loading: boolean;
+  blockchainStatus: string;
 }
 
-function CreateSubjectModal({ isOpen, onClose, onCreate, loading }: CreateSubjectModalProps) {
+function CreateSubjectModal({ isOpen, onClose, onCreate, loading, blockchainStatus }: CreateSubjectModalProps) {
   const [subject, setSubject] = useState('');
+  const [description, setDescription] = useState('');
+  const [credits, setCredits] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (subject) {
-      onCreate(subject);
-      setSubject('');
+      onCreate(subject, description, credits);
+    }
+  };
+
+  const handleClose = () => {
+    if (!loading) {
+      setSubject(''); setDescription(''); setCredits('');
       onClose();
     }
   };
 
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={handleClose}>
       <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h2 className="text-xl font-bold text-white mb-4">Create Subject</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-300 mb-1">Subject Name *</label>
             <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none"
+              disabled={loading}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none disabled:opacity-50"
               placeholder="e.g., Mathematics" />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Description</label>
+            <input type="text" value={description} onChange={e => setDescription(e.target.value)}
+              disabled={loading}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none disabled:opacity-50"
+              placeholder="e.g., Advanced calculus and linear algebra" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Credits</label>
+            <input type="number" value={credits} onChange={e => setCredits(e.target.value)}
+              disabled={loading}
+              className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none disabled:opacity-50"
+              placeholder="e.g., 4" min="1" />
+          </div>
+
+          {/* Blockchain status indicator */}
+          {blockchainStatus && (
+            <div className="flex items-center gap-2 p-3 bg-teal-500/10 border border-teal-500/20 rounded-lg">
+              <svg className="w-4 h-4 text-teal-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span className="text-sm text-teal-300">{blockchainStatus}</span>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="button" onClick={handleClose} disabled={loading}
+              className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button>
             <button type="submit" disabled={loading || !subject}
               className="flex-1 px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors">
-              {loading ? 'Creating...' : 'Create Subject'}
+              {loading ? 'Processing...' : 'Create Subject'}
             </button>
           </div>
         </form>
@@ -552,6 +590,8 @@ export default function AdminBlockchainPage() {
   const [showComponentModal, setShowComponentModal] = useState(false);
   const [showSubjectCreateModal, setShowSubjectCreateModal] = useState(false);
   const [showRegisterComponentModal, setShowRegisterComponentModal] = useState(false);
+  const [blockchainStatus, setBlockchainStatus] = useState('');
+  const [createSubjectProcessing, setCreateSubjectProcessing] = useState(false);
 
   // Hooks for blockchain operations
   const [assignRole, { loading: assignRoleLoading }] = useAssignBlockchainRole();
@@ -704,23 +744,77 @@ export default function AdminBlockchainPage() {
     }
   };
 
-  const handleCreateSubject = async (subjectName: string) => {
+  const handleCreateSubject = async (subjectName: string, description: string, credits: string) => {
+    setCreateSubjectProcessing(true);
+    setBlockchainStatus('');
+
     try {
+      // Step 1: Check MetaMask availability
+      if (!window.ethereum) {
+        throw new Error('MetaMask not found. Please install MetaMask.');
+      }
+
+      // Step 2: Create ethers provider and signer from MetaMask
+      setBlockchainStatus('Connecting to MetaMask...');
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // Step 3: Create contract instance
+      const contract = new Contract(
+        GRADING_SSI_CONTRACT_ADDRESS,
+        GRADING_SSI_ABI,
+        signer
+      );
+
+      // Step 4: Call createSubject on the smart contract (prompts MetaMask)
+      setBlockchainStatus('Waiting for MetaMask approval...');
+      const tx = await contract.createSubject(subjectName);
+
+      // Capture the hash immediately — ethers v6 proxy objects can lose reference
+      const txHash = tx.hash;
+      console.log('Transaction sent, hash:', txHash);
+
+      if (!txHash) {
+        throw new Error('Transaction was sent but no hash was returned. Please try again.');
+      }
+
+      // Step 5: Wait for the transaction to be mined
+      setBlockchainStatus(`Transaction submitted (${txHash.slice(0, 10)}...). Waiting for confirmation...`);
+      await tx.wait();
+
+      // Step 6: Send the transaction hash to the backend via GraphQL
+      setBlockchainStatus('Transaction confirmed! Saving to database...');
       const result = await createSubject({
         variables: {
           input: {
-            subjectName
+            subjectName,
+            transactionHash: txHash,
+            ...(description ? { description } : {}),
+            ...(credits ? { credits: parseInt(credits) } : {}),
           }
         }
       });
 
       if (result.data?.createSubject.success) {
-        alert(`Successfully created subject: ${subjectName}`);
+        alert(`Successfully created subject: ${subjectName}\nTx Hash: ${txHash}`);
+        setShowSubjectCreateModal(false);
       } else {
-        alert(`Failed to create subject: ${subjectName}`);
+        alert(`Blockchain transaction succeeded but backend failed to save subject: ${subjectName}`);
       }
     } catch (error: any) {
-      alert(`Error: ${error.message}`);
+      console.error('CreateSubject error:', error);
+
+      // Handle specific MetaMask/ethers errors
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        alert('Transaction was rejected in MetaMask.');
+      } else if (error.code === 'CALL_EXCEPTION') {
+        alert(`Smart contract error: ${error.reason || error.message}`);
+      } else {
+        alert(`Error: ${error.message}`);
+      }
+    } finally {
+      setCreateSubjectProcessing(false);
+      setBlockchainStatus('');
     }
   };
 
@@ -1025,7 +1119,8 @@ export default function AdminBlockchainPage() {
           isOpen={showSubjectCreateModal}
           onClose={() => setShowSubjectCreateModal(false)}
           onCreate={handleCreateSubject}
-          loading={createSubjectLoading}
+          loading={createSubjectProcessing || createSubjectLoading}
+          blockchainStatus={blockchainStatus}
         />
 
         <RegisterComponentModal

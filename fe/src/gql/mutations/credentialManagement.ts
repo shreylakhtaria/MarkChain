@@ -26,15 +26,16 @@ export const UPDATE_CREDENTIAL_WITH_COMPONENT = gql`
 export const CREATE_SUBJECT = gql`
   mutation CreateSubject($input: CreateSubjectInput!) {
     createSubject(input: $input) {
-      txHash
       success
+      txHash
       subject {
         _id
         subjectName
         blockchainHash
-        isActive
-        createdBy
+        credits
         description
+        createdBy
+        isActive
         createdAt
         updatedAt
       }

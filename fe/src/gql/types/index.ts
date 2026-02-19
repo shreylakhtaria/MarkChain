@@ -435,6 +435,8 @@ export interface UpdateCredentialWithComponentInput {
 
 export interface CreateSubjectInput {
   subjectName: string;
+  transactionHash: string;
+  credits?: number;
   description?: string;
 }
 
@@ -450,9 +452,10 @@ export interface Subject {
   _id: string;
   subjectName: string;
   blockchainHash?: string;
-  isActive: boolean;
-  createdBy: string;
+  credits?: number;
   description?: string;
+  createdBy: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -507,8 +510,8 @@ export interface UpdateCredentialWithComponentResponse {
 
 export interface CreateSubjectResponse {
   createSubject: {
-    txHash: string;
     success: boolean;
+    txHash: string;
     subject: Subject;
   };
 }
