@@ -149,6 +149,7 @@ type SubjectResponse {
   isActive: Boolean!
   createdBy: String
   description: String
+  credits: Float
   createdAt: String!
   updatedAt: String!
 }
@@ -454,6 +455,8 @@ input IssueBlockchainCredentialInput {
 input CreateSubjectInput {
   subjectName: String!
   description: String
+  credits: Float
+  transactionHash: String!
 }
 
 input RegisterComponentInput {

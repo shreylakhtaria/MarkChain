@@ -27,6 +27,7 @@ import {
   SubjectWithComponentsResponse,
   ComponentWithTxResponse,
 } from './blockchain.types';
+import { AuthGuard } from '@nestjs/passport';
 
 @Resolver()
 export class BlockchainResolver {
@@ -432,7 +433,6 @@ export class BlockchainResolver {
   }
 
   // Utility Operations
-  @UseGuards(JwtAuthGuard)
   @Query(() => NetworkInfo)
   async getBlockchainNetworkInfo(): Promise<NetworkInfo> {
     try {
@@ -464,7 +464,7 @@ export class BlockchainResolver {
     }
   }
 
-  // Week 1 Core Blockchain APIs
+  // Week 1 Core Blockchain APIs - User pays gas fees via MetaMask
   @UseGuards(JwtAuthGuard)
   @Mutation(() => SubjectWithComponentsResponse)
   async createSubject(
@@ -472,14 +472,19 @@ export class BlockchainResolver {
     @Context() context,
   ): Promise<any> {
     try {
-      const currentUser = context.req.user;
-      if (currentUser.role !== 'ADMIN') {
+      const currentUser = context.req?.user;
+      
+      // Only check admin role if auth is enabled
+      if (currentUser && currentUser.role !== 'ADMIN') {
         throw new Error('Only admins can create subjects');
       }
 
       const result = await this.blockchainService.createSubject(
         input.subjectName,
-        currentUser.walletAddress || 'admin'
+        input.transactionHash,
+        currentUser?.walletAddress || 'admin',
+        input.description,
+        input.credits
       );
 
       return result;

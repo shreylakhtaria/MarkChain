@@ -226,6 +226,9 @@ export class SubjectResponse {
   @Field({ nullable: true })
   description?: string;
 
+  @Field({ nullable: true })
+  credits?: number;
+
   @Field()
   createdAt: string;
 
@@ -273,6 +276,12 @@ export class CreateSubjectInput {
 
   @Field({ nullable: true })
   description?: string;
+
+  @Field({ nullable: true })
+  credits?: number;
+
+  @Field()
+  transactionHash: string;
 }
 
 @InputType()

@@ -18,6 +18,9 @@ export class Subject {
   @Prop()
   description: string;
 
+  @Prop()
+  credits: number; // Credit hours for the subject
+
   createdAt: Date;
   updatedAt: Date;
 }

@@ -431,54 +431,80 @@ export class BlockchainService {
   }
 
   /**
-   * 6. Create a new subject in the system (Admin only)
-   * @param subject - Subject name
-   * @param createdBy - Admin who created it
-   * @returns Transaction hash, success status, and saved subject
+   * 6. Create a new subject - User pays gas fees via MetaMask
+   * Frontend calls smart contract directly, then sends tx hash to this API
+   * @param subjectName - Subject name
+   * @param transactionHash - Transaction hash from MetaMask signed transaction
+   * @param createdBy - User who created it
+   * @param description - Optional subject description
+   * @param credits - Optional subject credits
+   * @returns Success status and saved subject
    */
-  async createSubject(subject: string, createdBy?: string) {
+  async createSubject(
+    subjectName: string,
+    transactionHash: string,
+    createdBy: string,
+    description?: string,
+    credits?: number
+  ) {
     try {
-      // --- DIAGNOSTICS ---
-      // 1. Verify ABI has createSubject
-      const fn = this.contract.interface.getFunction('createSubject');
-      this.logger.log(`ABI function found: ${fn ? fn.format() : 'NOT FOUND IN ABI'}`);
-
-      // 2. Check wallet balance (gas)
-      const balance = await this.provider.getBalance(this.wallet.address);
-      this.logger.log(`Wallet balance: ${ethers.formatEther(balance)} ETH`);
-      if (balance === 0n) {
-        throw new Error('Wallet has 0 ETH — cannot pay for gas. Fund the wallet on Sepolia first.');
+      this.logger.log(`Saving subject to MongoDB: ${subjectName}`);
+      this.logger.log(`Transaction Hash: ${transactionHash}`);
+      
+      // Verify transaction exists on blockchain
+      const txReceipt = await this.provider.getTransactionReceipt(transactionHash);
+      if (!txReceipt) {
+        throw new Error('Transaction not found on blockchain. Please wait for confirmation.');
       }
-
-      // 3. Verify contract is deployed at address
-      const code = await this.provider.getCode(this.contract.target.toString());
-      this.logger.log(`Contract bytecode length at address: ${code.length}`);
-      if (code === '0x') {
-        throw new Error(`No contract deployed at ${this.contract.target}. Update CONTRACT_ADDRESS in .env`);
+      
+      if (txReceipt.status === 0) {
+        throw new Error('Transaction failed on blockchain');
       }
-      // --- END DIAGNOSTICS ---
-
-      // Create on blockchain
-      const tx = await this.contract.createSubject(subject);
-      if (!tx) {
-        throw new Error('Transaction returned undefined — contract may not match the ABI');
+      
+      // Verify transaction was sent to our contract
+      if (txReceipt.to?.toLowerCase() !== this.contract.target.toString().toLowerCase()) {
+        throw new Error('Transaction was not sent to the correct contract');
       }
-      await tx.wait();
-      this.logger.log(`Subject created on blockchain: ${subject}`);
+      
+      this.logger.log(`Transaction verified successfully`);
+      
+      // Check if subject already exists with this transaction hash
+      const existingSubject = await this.subjectModel.findOne({ blockchainHash: transactionHash });
+      if (existingSubject) {
+        this.logger.log(`Subject already exists with this transaction hash`);
+        return {
+          success: true,
+          txHash: transactionHash,
+          subject: {
+            _id: String(existingSubject._id),
+            subjectName: existingSubject.subjectName,
+            blockchainHash: existingSubject.blockchainHash,
+            isActive: existingSubject.isActive,
+            createdBy: existingSubject.createdBy,
+            description: existingSubject.description,
+            credits: existingSubject.credits,
+            createdAt: existingSubject.createdAt.toISOString(),
+            updatedAt: existingSubject.updatedAt.toISOString(),
+          }
+        };
+      }
       
       // Save to MongoDB
       const newSubject = new this.subjectModel({
-        subjectName: subject,
-        blockchainHash: tx.hash,
-        createdBy: createdBy || 'admin',
+        subjectName,
+        blockchainHash: transactionHash,
+        createdBy,
+        description,
+        credits,
         isActive: true,
       });
-      const savedSubject = await newSubject.save();
-      this.logger.log(`Subject saved to MongoDB: ${subject}`);
       
-      return { 
-        txHash: tx.hash,
+      const savedSubject = await newSubject.save();
+      this.logger.log(`Subject saved to MongoDB: ${subjectName}`);
+      
+      return {
         success: true,
+        txHash: transactionHash,
         subject: {
           _id: String(savedSubject._id),
           subjectName: savedSubject.subjectName,
@@ -486,13 +512,14 @@ export class BlockchainService {
           isActive: savedSubject.isActive,
           createdBy: savedSubject.createdBy,
           description: savedSubject.description,
+          credits: savedSubject.credits,
           createdAt: savedSubject.createdAt.toISOString(),
           updatedAt: savedSubject.updatedAt.toISOString(),
         }
       };
     } catch (error) {
       this.logger.error(`Failed to create subject: ${error.message}`);
-      throw error;
+      throw new Error(`Failed to create subject: ${error.message}`);
     }
   }
 
