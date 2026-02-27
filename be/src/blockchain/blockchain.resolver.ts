@@ -26,6 +26,8 @@ import {
   RegisterComponentInput,
   SubjectWithComponentsResponse,
   ComponentWithTxResponse,
+  CreateCredentialInput,
+  CredentialTxResponse,
 } from './blockchain.types';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -540,4 +542,39 @@ export class BlockchainResolver {
       throw new Error(`Failed to get components: ${error.message}`);
     }
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Mutation(() => CredentialTxResponse)
+
+  async createNewCredential(
+    @Args('input') input: CreateCredentialInput,
+    @Context() context,
+  ): Promise<any> {
+    try {
+      const currentUser = context.req.user;
+
+      if (currentUser.role !== 'TEACHER' && currentUser.role !== 'ADMIN') {
+        throw new Error('Only teachers and admins can create credentials');
+      }
+
+      const credentialData = JSON.parse(input.credentialData);
+      credentialData.issuer = currentUser.walletAddress;
+      credentialData.issuerName = currentUser.name || currentUser.email;
+
+      const result = await this.blockchainService.createNewCredential(
+        input.studentAddress,
+        input.subjectName,
+        credentialData,
+        input.validityPeriod ?? 31536000
+      );
+      return {
+        ...result,
+        message: `Credential created. IPFS: ${result.ipfsHash}`,
+      };
+
+    } catch (error) {
+      throw new Error(`createNewCredential failed: ${error.message}`);
+    }
+  }
+
 }

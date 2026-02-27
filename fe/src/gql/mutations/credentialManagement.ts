@@ -24,23 +24,23 @@ export const UPDATE_CREDENTIAL_WITH_COMPONENT = gql`
 
 // CREATE SUBJECT
 export const CREATE_SUBJECT = gql`
-  mutation CreateSubject($input: CreateSubjectInput!) {
-    createSubject(input: $input) {
-      success
-      txHash
-      subject {
-        _id
-        subjectName
-        blockchainHash
-        credits
-        description
-        createdBy
-        isActive
-        createdAt
-        updatedAt
-      }
+mutation CreateSubject($input: CreateSubjectInput!) {
+  createSubject(input: $input) {
+    success
+    txHash
+    subject {
+      _id
+      subjectName
+      blockchainHash
+      credits
+      description
+      createdBy
+      isActive
+      createdAt
+      updatedAt
     }
   }
+}
 `;
 
 // REGISTER COMPONENT

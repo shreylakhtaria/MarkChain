@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ethers } from 'ethers';
 import { GRADING_SSI_ABI } from './contract-abi';
+import { IPFSService } from './ipfs.service';
 import { Subject, SubjectDocument } from '../schemas/subject.schema';
 import { Component, ComponentDocument } from '../schemas/component.schema';
 
@@ -16,6 +17,7 @@ export class BlockchainService {
 
   constructor(
     private configService: ConfigService,
+    private readonly ipfsService: IPFSService,
     @InjectModel(Subject.name) private subjectModel: Model<SubjectDocument>,
     @InjectModel(Component.name) private componentModel: Model<ComponentDocument>,
   ) {
@@ -448,8 +450,20 @@ export class BlockchainService {
     credits?: number
   ) {
     try {
-      this.logger.log(`Saving subject to MongoDB: ${subjectName}`);
-      this.logger.log(`Transaction Hash: ${transactionHash}`);
+      // Validate transaction hash - check for all falsy values
+      if (!transactionHash || 
+          transactionHash === 'null' || 
+          transactionHash === 'undefined' ||
+          typeof transactionHash === 'undefined' ||
+          transactionHash.trim() === '') {
+        throw new Error('Transaction hash is required. Please sign the transaction with MetaMask first. Frontend must send the tx hash from MetaMask.');
+      }
+      
+      // Validate transaction hash format (should be 0x followed by 64 hex characters)
+      const txHashRegex = /^0x[a-fA-F0-9]{64}$/;
+      if (!txHashRegex.test(transactionHash)) {
+        throw new Error(`Invalid transaction hash format. Received: "${transactionHash}". Expected: 0x followed by 64 hexadecimal characters.`);
+      }
       
       // Verify transaction exists on blockchain
       const txReceipt = await this.provider.getTransactionReceipt(transactionHash);
@@ -604,6 +618,7 @@ export class BlockchainService {
         isActive: subject.isActive,
         createdBy: subject.createdBy,
         description: subject.description,
+        credits: subject.credits,
         createdAt: subject.createdAt.toISOString(),
         updatedAt: subject.updatedAt.toISOString(),
       }));
@@ -636,4 +651,61 @@ export class BlockchainService {
       throw error;
     }
   }
+
+ async createNewCredential(
+  studentAddress: string,
+  subjectName: string,
+  credentialData: object,
+  validityPeriod: number // in seconds, e.g. 31536000 = 1 year
+): Promise<{ txHash: string; ipfsHash: string; success: boolean }> {
+  try {
+    // 1. Check subject exists in MongoDB
+    const subject = await this.subjectModel.findOne({ subjectName, isActive: true });
+    if (!subject) {
+      throw new Error(`Subject '${subjectName}' does not exist. Create it first.`);
+    }
+
+    // 2. Check credential doesn't already exist for this student+subject
+    const alreadyExists = await this.contract.isCredentialValid(studentAddress, subjectName)
+      .catch(() => false);
+    // isCredentialValid returns false for non-existent too, so check via getStudentCredential
+    try {
+      const existing = await this.contract.getStudentCredential(studentAddress, subjectName);
+      if (existing && existing.createdAt > 0n) {
+        throw new Error(
+          `Credential already exists for student ${studentAddress} in subject '${subjectName}'. Use updateCredentialWithComponent to add grades.`
+        );
+      }
+    } catch (e) {
+      // If error is our custom message, rethrow
+      if (e.message.includes('Credential already exists')) throw e;
+      // Otherwise it means credential doesn't exist — continue
+    }
+
+    // 3. Upload credential data to IPFS
+    const ipfsHash = await this.ipfsService.uploadCredential({
+      ...credentialData,
+      subject: subjectName,
+      studentAddress,
+      createdAt: new Date().toISOString(),
+    } as any);
+    this.logger.log(`Credential data uploaded to IPFS: ${ipfsHash}`);
+
+    // 4. Create credential on blockchain
+    const tx = await this.contract.createCredential(
+      studentAddress,
+      subjectName,
+      ipfsHash,
+      validityPeriod
+    );
+    await tx.wait();
+    this.logger.log(`Credential created on blockchain for ${studentAddress} in ${subjectName}`);
+
+    return { txHash: tx.hash, ipfsHash, success: true };
+  } catch (error) {
+    this.logger.error(`Failed to create credential: ${error.message}`);
+    throw error;
+  }
+}
+
 }

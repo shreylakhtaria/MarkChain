@@ -1,4 +1,5 @@
-import { InputType, Field, ObjectType } from '@nestjs/graphql';
+import { InputType, Field, ObjectType, Int } from '@nestjs/graphql';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 
 @ObjectType()
 export class BlockchainCredential {
@@ -271,16 +272,24 @@ export class ComponentResponse {
 
 @InputType()
 export class CreateSubjectInput {
-  @Field()
+  @Field(() => String)
+  @IsString()
+  @IsNotEmpty()
   subjectName: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
+  @IsString()
+  @IsOptional()
   description?: string;
 
-  @Field({ nullable: true })
+  @Field(() => Int, { nullable: true })
+  @IsNumber()
+  @IsOptional()
   credits?: number;
 
-  @Field()
+  @Field(() => String)
+  @IsString()
+  @IsNotEmpty()
   transactionHash: string;
 }
 
@@ -321,4 +330,50 @@ export class ComponentWithTxResponse {
 
   @Field(() => ComponentResponse)
   component: ComponentResponse;
+}
+
+@InputType() 
+export class CreateCredentialInput{
+  @Field()
+  studentAddress: string;
+
+  @Field()
+  subjectName: string;
+
+  @Field()
+  credentialData: string;
+
+  @Field({nullable : true , defaultValue :31536000 })
+  validityPeriod?: number;
+}
+
+@ObjectType()
+export class CredentialTxResponse {
+    @Field()
+  success: boolean;
+
+  @Field()
+  txHash: string;
+
+  @Field()
+  ipfsHash: string;
+
+  @Field({ nullable: true })
+  message?: string;
+
+}
+
+@InputType() 
+export class gradeComponentInput {
+  @Field()
+  studentAddress: string;
+
+  @Field()
+  subjectName: string;
+
+  @Field()
+  componentName: string;
+
+  @Field()
+  gradeData: string; // JSON STRING 
 }
